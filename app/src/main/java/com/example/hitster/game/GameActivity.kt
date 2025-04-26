@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.MaterialTheme
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,6 +50,8 @@ class GameActivity : AppCompatActivity() {
             playlists.add("2u0vgWYqU1TWVcDehJnZuN")
         }
         viewModel.init(players, playlists, resources)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
             val state = viewModel.viewState.collectAsStateWithLifecycle().value

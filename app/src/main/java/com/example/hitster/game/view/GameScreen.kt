@@ -4,10 +4,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -45,7 +48,7 @@ import com.example.hitster.ui.PlayerCard
 @Composable
 internal fun GameScreen(state: GameViewState, onAction: (GameAction) -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().padding(WindowInsets.systemBars.asPaddingValues()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(modifier = Modifier.weight(1f).fillMaxWidth()) {

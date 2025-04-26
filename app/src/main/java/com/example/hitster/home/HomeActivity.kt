@@ -10,6 +10,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.MaterialTheme
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.hitster.game.GameActivity
 import com.example.hitster.home.model.HomeAction
@@ -38,6 +39,9 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         auth()
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContent {
             val state = viewModel.viewState.collectAsStateWithLifecycle().value
             MaterialTheme {
