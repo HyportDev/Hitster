@@ -41,6 +41,7 @@ fun InputPlayerCard(
 ) {
     PlayerCardContent(modifier = modifier, onClick = {}) {
         TextField(
+            modifier = Modifier.weight(1f),
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
@@ -67,7 +68,12 @@ fun InputPlayerCard(
 }
 
 @Composable
-private fun PlayerCardContent(modifier: Modifier = Modifier, onClick: () -> Unit, selected: Boolean = false, content: @Composable RowScope.() -> Unit) {
+private fun PlayerCardContent(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    selected: Boolean = false,
+    content: @Composable RowScope.() -> Unit
+) {
     Card(
         modifier = modifier,
         elevation = CardDefaults.elevatedCardElevation(),
