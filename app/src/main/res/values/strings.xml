@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Hitster</string>
+    <string name="home_players">Players</string>
+    <string name="home_deletePlayer">Do you really want to delete player %s?</string>
+    <string name="home_playerAlreadyAdded">This player has already been added!</string>
+    <string name="home_addPlayer">Add Player</string>
+    <string name="home_playlists">Playlists</string>
+    <string name="home_playlistNameError">Error fetching playlist name</string>
+    <string name="home_addPlaylistByLink">Add by link</string>
+    <string name="home_addPlaylistFromLibrary">Add from library</string>
+    <string name="home_startGame">Start Game</string>
+    <string name="home_selectPlaylists">Select Playlists</string>
+    <string name="dialog_confirm">Confirm</string>
+    <string name="dialog_cancel">Cancel</string>
+
+    <string name="game_buttonGuess">Guess</string>
+    <string name="game_buttonNext">Next Player\'s turn</string>
+    <string name="home_startingPoint">Starting Point</string>
+</resources>
