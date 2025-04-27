@@ -26,9 +26,21 @@ import androidx.compose.ui.unit.dp
 import com.example.hitster.R
 
 @Composable
-fun PlayerCard(modifier: Modifier = Modifier, playerName: String, onClick: () -> Unit, selected: Boolean = false) {
+fun PlayerCard(
+    modifier: Modifier = Modifier,
+    playerName: String,
+    onClick: () -> Unit,
+    selected: Boolean = false
+) {
     PlayerCardContent(modifier = modifier, selected = selected, onClick = onClick) {
-        Text(text = playerName, color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer)
+        Text(
+            text = playerName,
+            color = if (selected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            }
+        )
     }
 }
 

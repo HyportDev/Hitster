@@ -53,6 +53,7 @@ import com.example.hitster.home.model.HomeDialogState
 import com.example.hitster.home.model.HomePlayerInputState
 import com.example.hitster.home.model.HomeViewState
 import com.example.hitster.home.model.PlaylistViewState
+import com.example.hitster.home.model.SpotifyLoading
 import com.example.hitster.ui.Button
 import com.example.hitster.ui.ErrorSnackbar
 import com.example.hitster.ui.InputPlayerCard
@@ -103,10 +104,9 @@ internal fun HomeScreen(
     Column(modifier = Modifier.fillMaxSize().padding(WindowInsets.systemBars.asPaddingValues())) {
         Column(
             modifier = Modifier.weight(1f).padding(16.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Title(stringResource(R.string.home_players))
+            Title(text = stringResource(R.string.home_players))
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -145,7 +145,15 @@ internal fun HomeScreen(
 
             HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(top = 32.dp))
 
-            Title(stringResource(R.string.home_playlists))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Title(text = stringResource(R.string.home_playlists))
+                SpotifyView(spotifyItem = state.spotifyItem, onAction = onAction)
+            }
+
 
             for (playlist in state.playlists) {
                 Card(
@@ -202,6 +210,7 @@ internal fun HomeScreen(
                     onClick = { onAction(AddPlaylistFromLibrary) }
                 )
             }
+
         }
 
         AnimatedVisibility(
@@ -230,7 +239,8 @@ fun HomeScreenPreview() {
         HomeScreen(
             state = HomeViewState(
                 players = listOf("Timo", "Luno"),
-                playlists = listOf(PlaylistViewState.Loading)
+                playlists = listOf(PlaylistViewState.Loading),
+                spotifyItem = SpotifyLoading
             ),
             event = MutableSharedFlow()
             , {}, {}

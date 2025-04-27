@@ -14,4 +14,6 @@ sealed interface HomeAction {
     data object AddPlaylistFromLibrary : HomeAction
     data class AddPlaylists(val playlists: List<Playlist>) : HomeAction
     data class RemovePlaylist(val playlist: Playlist) : HomeAction
+
+    data object ConnectSpotify : HomeAction
 }

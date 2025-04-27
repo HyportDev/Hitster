@@ -20,12 +20,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.hitster.game.model.GameAction
@@ -65,8 +67,17 @@ internal fun GameScreen(state: GameViewState, onAction: (GameAction) -> Unit) {
                 }
             }
 
+            Text(
+                modifier = Modifier.padding(top = 16.dp, start = 16.dp),
+                text = "Songs: " + state.songItems
+                    .filter { it is Song && it.correctLocation != false }
+                    .size,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
             HorizontalPager(
-                modifier = Modifier.padding(vertical = 16.dp),
+                modifier = Modifier.padding(bottom = 16.dp),
                 state = rememberPagerState { state.songItems.size },
                 pageSize = PageSize.Fixed(200.dp),
                 pageSpacing = 8.dp,
@@ -102,12 +113,12 @@ internal fun GameScreen(state: GameViewState, onAction: (GameAction) -> Unit) {
 
 
         IconButton(
-            modifier = Modifier.size(100.dp).padding(bottom = 4.dp),
+            modifier = Modifier.size(80.dp).padding(bottom = 4.dp),
             colors = IconButtonDefaults.filledIconButtonColors(),
             onClick = { onAction(state.musicButton.action) }
         ) {
             Icon(
-                modifier = Modifier.size(50.dp),
+                modifier = Modifier.size(40.dp),
                 painter = painterResource(state.musicButton.icon),
                 contentDescription = null
             )

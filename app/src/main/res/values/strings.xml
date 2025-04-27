@@ -16,4 +16,7 @@
     <string name="game_buttonGuess">Guess</string>
     <string name="game_buttonNext">Next Player\'s turn</string>
     <string name="home_startingPoint">Starting Point</string>
+    <string name="home_spotifyConnected">Connected</string>
+    <string name="home_spotifyLoading">Loading</string>
+    <string name="home_spotifyDisconnected">Disconnected</string>
 </resources>

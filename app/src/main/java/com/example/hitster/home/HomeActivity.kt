@@ -18,6 +18,7 @@ import com.example.hitster.home.model.HomeAction.AddPlayer
 import com.example.hitster.home.model.HomeAction.AddPlaylistByLink
 import com.example.hitster.home.model.HomeAction.AddPlaylistFromLibrary
 import com.example.hitster.home.model.HomeAction.AddPlaylists
+import com.example.hitster.home.model.HomeAction.ConnectSpotify
 import com.example.hitster.home.model.HomeAction.DismissDialog
 import com.example.hitster.home.model.HomeAction.OnDialogItemChecked
 import com.example.hitster.home.model.HomeAction.OnPlayerInputChange
@@ -80,6 +81,7 @@ class HomeActivity : AppCompatActivity() {
                 viewModel.addPlaylists(action.playlists)
             }
             is OnDialogItemChecked -> viewModel.toggleSelectionValue(action.item, action.checked)
+            ConnectSpotify -> auth()
         }
     }
 
@@ -122,9 +124,11 @@ class HomeActivity : AppCompatActivity() {
 
             if (response.type == AuthorizationResponse.Type.TOKEN) {
                 accessToken = response.accessToken
+                viewModel.setSpotifyState(true)
                 Log.d("MainActivity", "Access token retrieved!")
                 //connectToSpotifyRemote()
             } else if (response.type == AuthorizationResponse.Type.ERROR) {
+                viewModel.setSpotifyState(false)
                 Log.d("MainActivity", "Error during authorization: ${response.error}")
             }
         }

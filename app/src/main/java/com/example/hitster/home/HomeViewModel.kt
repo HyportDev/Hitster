@@ -16,6 +16,8 @@ import com.example.hitster.home.model.HomeViewState
 import com.example.hitster.home.model.Playlist
 import com.example.hitster.home.model.PlaylistSelectionItem
 import com.example.hitster.home.model.PlaylistViewState
+import com.example.hitster.home.model.SpotifyConnected
+import com.example.hitster.home.model.SpotifyDisconnected
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -56,6 +58,16 @@ class HomeViewModel : ViewModel() {
                     players = it.players + trimmedName,
                     playerInputState = HomePlayerInputState.Closed
                 )
+            }
+        }
+    }
+
+    fun setSpotifyState(connected: Boolean) {
+        _viewState.update {
+            if (connected) {
+                it.copy(spotifyItem = SpotifyConnected)
+            } else {
+                it.copy(spotifyItem = SpotifyDisconnected)
             }
         }
     }
