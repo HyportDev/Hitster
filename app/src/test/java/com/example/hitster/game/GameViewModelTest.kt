@@ -1,7 +1,6 @@
 package com.example.hitster.game
 
 import app.cash.turbine.test
-import com.example.hitster.game.data.AccessTokenProvider
 import com.example.hitster.game.model.Player
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -9,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 class GameViewModelTest {
 
- private val viewModel = GameViewModel(AccessTokenProvider())
+ private val viewModel = GameViewModel()
 
  private val players = listOf(Player(name = "Tim"), Player("Tom"))
 

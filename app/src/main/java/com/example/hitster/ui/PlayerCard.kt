@@ -73,6 +73,7 @@ fun InputPlayerCard(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_apply),
+                tint = MaterialTheme.colorScheme.onPrimary,
                 contentDescription = stringResource(R.string.home_addPlayer)
             )
         }
@@ -103,7 +104,11 @@ private fun PlayerCardContent(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_player),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = if (selected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                },
                 contentDescription = null
             )
             content(this)

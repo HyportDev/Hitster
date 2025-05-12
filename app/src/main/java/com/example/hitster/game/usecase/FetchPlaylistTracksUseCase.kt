@@ -1,7 +1,7 @@
 package com.example.hitster.game.usecase
 
 import android.util.Log
-import com.example.hitster.game.data.AccessTokenProvider
+import com.example.hitster.data.AccessTokenProvider
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,8 +9,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 class FetchPlaylistTracksUseCase(
-    private val accessTokenProvider: AccessTokenProvider,
-    private val client: OkHttpClient = OkHttpClient()
+    private val accessTokenProvider: AccessTokenProvider
 ) {
 
     suspend operator fun invoke(playlistIds: List<String>): List<String> = withContext(Dispatchers.IO) {
@@ -28,7 +27,7 @@ class FetchPlaylistTracksUseCase(
                     .build()
 
                 try {
-                    val response = client.newCall(request).execute()
+                    val response = OkHttpClient().newCall(request).execute()
                     val responseBody = response.body?.string()
 
                     if (response.isSuccessful && responseBody != null) {

@@ -3,10 +3,10 @@ package com.example.hitster.game.view
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +30,7 @@ internal fun SongCard(
     validation: SongCardValidation? = null
 ) {
     Card(
-        modifier = Modifier.size(200.dp),
+        modifier = Modifier.aspectRatio(1f),
         colors = CardDefaults.cardColors().copy(containerColor = color),
         border = validation?.let { BorderStroke(2.dp, validation.color) }
     ) {
@@ -41,6 +41,7 @@ internal fun SongCard(
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 text = artist,
+                color = Color.Black,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -48,6 +49,7 @@ internal fun SongCard(
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 text = year,
+                color = Color.Black,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -55,6 +57,7 @@ internal fun SongCard(
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 text = title,
+                color = Color.Black,
                 fontSize = 14.sp,
                 fontStyle = FontStyle.Italic,
                 textAlign = TextAlign.Center

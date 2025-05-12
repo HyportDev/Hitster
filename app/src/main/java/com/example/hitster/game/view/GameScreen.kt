@@ -1,40 +1,41 @@
 package com.example.hitster.game.view
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PageSize
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.hitster.game.model.ButtonState
 import com.example.hitster.game.model.GameAction
+import com.example.hitster.game.model.GameAction.Guess
 import com.example.hitster.game.model.GameViewState
 import com.example.hitster.game.model.Player
 import com.example.hitster.game.model.PlayerItem
 import com.example.hitster.game.model.Song
+import com.example.hitster.game.model.SongItem
 import com.example.hitster.game.model.SongItemColor
 import com.example.hitster.game.model.SongItemColor.AQUA
 import com.example.hitster.game.model.SongItemColor.BLUE
@@ -44,86 +45,111 @@ import com.example.hitster.game.model.SongItemColor.PURPLE
 import com.example.hitster.game.model.SongItemColor.YELLOW
 import com.example.hitster.game.model.UnknownSong
 import com.example.hitster.game.view.SongCardValidation.Companion.toSongCardValidation
+import com.example.hitster.res.toText
 import com.example.hitster.ui.Button
+import com.example.hitster.ui.HitsterTheme
 import com.example.hitster.ui.PlayerCard
 
 @Composable
 internal fun GameScreen(state: GameViewState, onAction: (GameAction) -> Unit) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     Column(
-        modifier = Modifier.fillMaxSize().padding(WindowInsets.systemBars.asPaddingValues()),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(state.playerItems) {
-                    PlayerCard(
-                        playerName = it.playerName,
-                        selected = it.isSelected,
-                        onClick = { onAction(GameAction.OnSelectPlayer(it)) }
-                    )
+        if (isLandscape) {
+            Row(modifier = Modifier.weight(1f)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxHeight().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    playerList(state.playerItems, onAction)
                 }
+                SongRow(state.songItems, state.primaryButton, onAction)
             }
+        } else {
+            Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    playerList(state.playerItems, onAction)
+                }
+                SongRow(state.songItems, state.primaryButton, onAction)
+            }
+        }
 
-            Text(
-                modifier = Modifier.padding(top = 16.dp, start = 16.dp),
-                text = "Songs: " + state.songItems
-                    .filter { it is Song && it.correctLocation != false }
-                    .size,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.secondary
-            )
+        MusicButtonSection(state.musicButton, state.primaryButton.action, onAction)
+    }
+}
 
-            HorizontalPager(
-                modifier = Modifier.padding(bottom = 16.dp),
-                state = rememberPagerState { state.songItems.size },
-                pageSize = PageSize.Fixed(200.dp),
-                pageSpacing = 8.dp,
-                contentPadding = PaddingValues(16.dp)
-            ) { page ->
-                when(val songItem = state.songItems[page]) {
+private fun LazyListScope.playerList(playerItems: List<PlayerItem>, onAction: (GameAction) -> Unit) {
+    items(playerItems) {
+        PlayerCard(
+            playerName = it.playerName,
+            selected = it.isSelected,
+            onClick = { onAction(GameAction.OnSelectPlayer(it)) }
+        )
+    }
+}
+
+@Composable
+private fun SongRow(
+    songItems: List<SongItem>,
+    primaryButton: ButtonState,
+    onAction: (GameAction) -> Unit
+) {
+    Column {
+        Text(
+            modifier = Modifier.padding(top = 16.dp, start = 16.dp),
+            text = "Songs: " + songItems
+                .filter { it is Song && it.correctLocation != false }
+                .size,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.secondary
+        )
+        LazyRow(
+            modifier = Modifier.fillMaxWidth().heightIn(50.dp, 200.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            items(songItems) { songItem ->
+                when (songItem) {
                     is Song ->
                         SongCard(
-                            title = songItem.title,
-                            artist = songItem.artist,
+                            title = songItem.title.getString(),
+                            artist = songItem.artist.getString(),
                             year = songItem.releaseYear.toString(),
                             validation = songItem.correctLocation.toSongCardValidation(),
                             color = songItem.color.getColor()
                         )
-                    UnknownSong -> GuessCard(
-                        onClickLeft = { onAction(GameAction.MoveLeft) },
-                        onClickRight = { onAction(GameAction.MoveRight) }
-                    )
-                }
-            }
 
-            with(state.primaryButton) {
-                AnimatedVisibility(isVisible) {
-                    Button(
-                        modifier = Modifier.padding(16.dp),
-                        title = title?.let { stringResource(it) } ?: "",
-                        primary = true,
-                        onClick = { onAction(action) }
+                    is UnknownSong -> GuessCard(
+                        onClickSubmit = { onAction(Guess) },
+                        onClickLeft = if (songItem.canMoveLeft) {
+                            { onAction(GameAction.MoveLeft) }
+                        } else null,
+                        onClickRight = if (songItem.canMoveRight) {
+                            { onAction(GameAction.MoveRight) }
+                        } else null
                     )
                 }
             }
         }
 
-
-        IconButton(
-            modifier = Modifier.size(80.dp).padding(bottom = 4.dp),
-            colors = IconButtonDefaults.filledIconButtonColors(),
-            onClick = { onAction(state.musicButton.action) }
-        ) {
-            Icon(
-                modifier = Modifier.size(40.dp),
-                painter = painterResource(state.musicButton.icon),
-                contentDescription = null
-            )
+        with(primaryButton) {
+            AnimatedVisibility(isVisible) {
+                Button(
+                    modifier = Modifier.padding(16.dp),
+                    title = title?.let { stringResource(it) } ?: "",
+                    primary = true,
+                    onClick = { onAction(action) }
+                )
+            }
         }
     }
+
 }
 
 private fun SongItemColor?.getColor(): Color {
@@ -141,13 +167,13 @@ private fun SongItemColor?.getColor(): Color {
 @Preview(showBackground = true)
 @Composable
 fun GameScreenPreview() {
-    MaterialTheme {
+    HitsterTheme {
         GameScreen(GameViewState.initial().copy(currentPlayer = Player(
             name = "Luno",
             songs = listOf(
-                Song("That's Amore", "Dean Martin", 1953),
-                Song("Alles nur geklaut", "Die Prinzen", 1993),
-                Song("Anyone", "Justin Bieber", 2021)
+                Song("That's Amore".toText(), "Dean Martin".toText(), 1953),
+                Song("Alles nur geklaut".toText(), "Die Prinzen".toText(), 1993),
+                Song("Anyone".toText(), "Justin Bieber".toText(), 2021)
             )
         ),
             playerItems = listOf(
@@ -156,9 +182,9 @@ fun GameScreenPreview() {
                 PlayerItem("Lily", false, false)
             ),
             songItems = listOf(
-            Song("That's Amore", "Dean Martin", 1953),
-            Song("Alles nur geklaut", "Die Prinzen", 1993),
-            Song("Anyone", "Justin Bieber", 2021)
+            Song("That's Amore".toText(), "Dean Martin".toText(), 1953),
+            Song("Alles nur geklaut".toText(), "Die Prinzen".toText(), 1993),
+            Song("Anyone".toText(), "Justin Bieber".toText(), 2021)
         )), {})
     }
 }

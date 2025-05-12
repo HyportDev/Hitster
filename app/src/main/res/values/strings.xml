@@ -19,4 +19,7 @@
     <string name="home_spotifyConnected">Connected</string>
     <string name="home_spotifyLoading">Loading</string>
     <string name="home_spotifyDisconnected">Disconnected</string>
+    <string name="game_play" translatable="false">Play Music</string>
+    <string name="game_pause" translatable="false">Pause Music</string>
+    <string name="home_invalidLink">Invalid playlist link. Try again.</string>
 </resources>

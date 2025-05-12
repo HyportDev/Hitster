@@ -1,13 +1,19 @@
 package com.example.hitster.game
 
-import android.content.res.Resources
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.hitster.game.usecase.ConnectToSpotifyUseCase
 import com.example.hitster.R
-import com.example.hitster.game.data.AccessTokenProvider
 import com.example.hitster.game.model.ButtonState
 import com.example.hitster.game.model.GameAction
+import com.example.hitster.game.model.GameAction.Guess
+import com.example.hitster.game.model.GameAction.MoveLeft
+import com.example.hitster.game.model.GameAction.MoveRight
+import com.example.hitster.game.model.GameAction.NextPlayer
+import com.example.hitster.game.model.GameAction.OnPauseClick
+import com.example.hitster.game.model.GameAction.OnPlayClick
+import com.example.hitster.game.model.GameAction.OnSelectPlayer
 import com.example.hitster.game.model.GameViewState
 import com.example.hitster.game.model.MusicButtonItem
 import com.example.hitster.game.model.Player
@@ -21,7 +27,6 @@ import com.example.hitster.game.model.moveSongItemLeft
 import com.example.hitster.game.model.moveSongItemRight
 import com.example.hitster.game.usecase.FetchPlaylistTracksUseCase
 import com.example.hitster.game.usecase.FetchTrackDetailsUseCase
-import com.example.hitster.game.usecase.FindEarliestReleaseYearUseCase
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import com.spotify.protocol.types.Repeat
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,14 +34,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class GameViewModel(accessTokenProvider: AccessTokenProvider) : ViewModel() {
-
-    // Use cases
-    private val fetchPlaylistTracksUseCase = FetchPlaylistTracksUseCase(accessTokenProvider)
-    private val findEarliestReleaseYearUseCase = FindEarliestReleaseYearUseCase(accessTokenProvider)
-    private val fetchTrackDetailsUseCase = FetchTrackDetailsUseCase(
-        accessTokenProvider, findEarliestReleaseYearUseCase
-    )
+class GameViewModel(
+    playerNames: List<String>,
+    playlists: List<String>,
+    private val fetchTrackDetailsUseCase: FetchTrackDetailsUseCase,
+    private val fetchPlaylistTracksUseCase: FetchPlaylistTracksUseCase,
+    private val connectToSpotifyUseCase: ConnectToSpotifyUseCase,
+) : ViewModel() {
 
     private var spotifyAppRemote: SpotifyAppRemote? = null
 
@@ -48,15 +52,45 @@ class GameViewModel(accessTokenProvider: AccessTokenProvider) : ViewModel() {
     private val _viewState = MutableStateFlow(GameViewState.initial())
     val viewState = _viewState.asStateFlow()
 
-    fun init(players: List<String>, playlists: List<String>, resources: Resources) {
-        this.players.addAll(players.map { Player.initialise(it, resources) })
+    init {
+        playerNames.let { players.addAll(playerNames.shuffled().map { Player.initialise(it) }) }
         fetchTracksFromPlaylists(playlists)
         nextPlayer()
     }
 
-    fun setSpotifyAppRemote(spotifyAppRemote: SpotifyAppRemote) {
+    fun initSpotifyConnection(clientId: String, redirectUri: String) {
+        viewModelScope.launch {
+            val result = connectToSpotifyUseCase(clientId, redirectUri)
+            if (result.isSuccess){
+                val appRemote = result.getOrThrow()
+                setSpotifyAppRemote(appRemote)
+            } else {
+                Log.e("Spotify", "Failed to connect", result.exceptionOrNull())
+            }
+        }
+    }
+
+    fun closeSpotifyConnection() {
+        spotifyAppRemote?.let {
+            SpotifyAppRemote.disconnect(it)
+        }
+    }
+
+    private fun setSpotifyAppRemote(spotifyAppRemote: SpotifyAppRemote) {
         this.spotifyAppRemote = spotifyAppRemote
         spotifyAppRemote.playerApi.setRepeat(Repeat.ONE)
+    }
+
+    fun onAction(action: GameAction) {
+        when(action) {
+            OnPauseClick -> pauseMusic()
+            OnPlayClick -> playMusic()
+            MoveLeft -> moveGuessCardLeft()
+            MoveRight -> moveGuessCardRight()
+            Guess -> loginGuess()
+            is OnSelectPlayer -> clickPlayer(action.playerItem)
+            NextPlayer -> nextPlayer()
+        }
     }
 
     private fun addSongs(uris: List<String>) {
@@ -74,14 +108,14 @@ class GameViewModel(accessTokenProvider: AccessTokenProvider) : ViewModel() {
         } ?:  Log.e(LOG_TAG, "Playlist has no items left.")
     }
 
-    fun nextPlayer() {
+    private fun nextPlayer() {
         val nextPlayer = players.removeLastOrNull()
         nextPlayer?.let { player ->
             players.add(0, player)
             _viewState.update { state ->
                 state.copy(
                     currentPlayer = player,
-                    songItems = player.songs + UnknownSong,
+                    songItems = player.songs + UnknownSong(),
                     playerItems = players.map {
                         PlayerItem(
                             playerName = it.name,
@@ -92,7 +126,7 @@ class GameViewModel(accessTokenProvider: AccessTokenProvider) : ViewModel() {
                     primaryButton = ButtonState(
                         isVisible = true,
                         title = R.string.game_buttonGuess,
-                        action = GameAction.Guess
+                        action = Guess
                     )
                 )
             }
@@ -100,14 +134,14 @@ class GameViewModel(accessTokenProvider: AccessTokenProvider) : ViewModel() {
         }
     }
 
-    fun clickPlayer(playerItem: PlayerItem) {
+    private fun clickPlayer(playerItem: PlayerItem) {
         _viewState.update { state ->
             val songItems = (players.find { it.name == playerItem.playerName }?.songs ?: emptyList())
             val isCurrentPlayer = state.currentPlayer?.name == playerItem.playerName
             state.copy(
                 playerItems = state.playerItems.map { it.copy(isSelected = it == playerItem) },
                 songItems = if (isCurrentPlayer) {
-                    songItems + UnknownSong
+                    songItems + UnknownSong()
                 } else {
                     songItems
                 },
@@ -116,33 +150,45 @@ class GameViewModel(accessTokenProvider: AccessTokenProvider) : ViewModel() {
         }
     }
 
-    fun playMusic() {
+    private fun playMusic() {
         spotifyAppRemote?.playerApi?.resume()
         _viewState.update { it.copy(musicButton = MusicButtonItem.PAUSE) }
     }
 
-    fun pauseMusic() {
+    private fun pauseMusic() {
         spotifyAppRemote?.playerApi?.pause()
         _viewState.update { it.copy(musicButton = MusicButtonItem.PLAY) }
     }
 
-    fun moveGuessCardLeft() {
+    private fun moveGuessCardLeft() {
         _viewState.update { state ->
+            val position = state.songItems.getGuessCardPosition()
+            val songItems = state.songItems.toMutableList()
+            songItems[position] = UnknownSong(
+                canMoveLeft = position > 1,
+                canMoveRight = true
+            )
             state.copy(
-                songItems = state.songItems.moveSongItemLeft(state.songItems.getGuessCardPosition())
+                songItems = songItems.moveSongItemLeft(position)
             )
         }
     }
 
-    fun moveGuessCardRight() {
+    private fun moveGuessCardRight() {
         _viewState.update { state ->
+            val songItems = state.songItems.toMutableList()
+            val position = songItems.getGuessCardPosition()
+            songItems[position] = UnknownSong(
+                canMoveLeft = true,
+                canMoveRight = position + 2 < songItems.size
+            )
             state.copy(
-                songItems = state.songItems.moveSongItemRight(state.songItems.getGuessCardPosition())
+                songItems = songItems.moveSongItemRight(position)
             )
         }
     }
 
-    fun loginGuess() {
+    private fun loginGuess() {
         _viewState.update { state ->
             val player = state.currentPlayer
             val song = state.currentSong
@@ -171,7 +217,7 @@ class GameViewModel(accessTokenProvider: AccessTokenProvider) : ViewModel() {
                     primaryButton = ButtonState(
                         isVisible = true,
                         title = R.string.game_buttonNext,
-                        action = GameAction.NextPlayer
+                        action = NextPlayer
                     )
                 )
             } else {

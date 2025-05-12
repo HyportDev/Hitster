@@ -33,5 +33,5 @@ internal fun List<SongItem>.getGuessedYearRange(guessedIndex: Int): Range<Int> {
 }
 
 internal fun List<SongItem>.getGuessCardPosition() : Int {
-    return this.indexOf(UnknownSong)
+    return this.indexOfFirst { it is UnknownSong }
 }

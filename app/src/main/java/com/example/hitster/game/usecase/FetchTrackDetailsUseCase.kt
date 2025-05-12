@@ -1,7 +1,8 @@
 package com.example.hitster.game.usecase
 
-import com.example.hitster.game.data.AccessTokenProvider
+import com.example.hitster.data.AccessTokenProvider
 import com.example.hitster.game.model.Song
+import com.example.hitster.res.toText
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -39,7 +40,7 @@ class FetchTrackDetailsUseCase(
             val songName = cleanSongTitle(title)
             val actualYear = findYearUseCase(songName, artist)
 
-            return@withContext Song(songName, artist, actualYear ?: releaseYear)
+            return@withContext Song(songName.toText(), artist.toText(), actualYear ?: releaseYear)
 
         } catch (e: Exception) {
             return@withContext null

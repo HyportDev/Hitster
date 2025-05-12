@@ -1,7 +1,8 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.jetbrains.kotlin.android)
     id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -12,8 +13,8 @@ android {
         applicationId = "com.example.hitster"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0.0"
+        versionCode = 3
+        versionName = "2.1.0"
 
         manifestPlaceholders.putAll(
             mapOf(
@@ -53,31 +54,28 @@ tasks.withType<Test>().configureEach {
 
 dependencies {
 
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.recyclerview:recyclerview:1.4.0")
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    implementation(libs.androidx.core.ktx)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation("com.google.code.gson:gson:2.10.1")
-    implementation("com.spotify.android:auth:2.1.2")
+    implementation(libs.gson)
+    implementation(libs.spotify.android.auth)
     implementation(files("libs/spotify-app-remote-release-0.8.0.aar"))
-    implementation("com.squareup.okhttp3:okhttp:4.10.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
-    implementation("androidx.activity:activity-ktx:1.10.1")
+    implementation(libs.squareup.okhttp3)
+    implementation(libs.koin)
+    implementation(libs.koinCompose)
 
     // Compose
-    val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
-    implementation(composeBom)
-    androidTestImplementation(composeBom)
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.material3)
+    implementation(libs.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
 
     // Android Studio Preview support
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
 
     // Testing
     testImplementation("app.cash.turbine:turbine:1.2.0")

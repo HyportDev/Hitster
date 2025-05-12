@@ -13,10 +13,11 @@
     <string name="home_selectPlaylists">Playlists auswählen</string>
     <string name="dialog_confirm">Bestätigen</string>
     <string name="dialog_cancel">Abbrechen</string>
-    <string name="game_buttonGuess">Einloggen</string>
+    <string name="game_buttonGuess">Antwort einloggen</string>
     <string name="game_buttonNext">Nächster Spieler</string>
     <string name="home_startingPoint">Startpunkt</string>
     <string name="home_spotifyConnected">Verbunden</string>
     <string name="home_spotifyLoading">Lädt</string>
     <string name="home_spotifyDisconnected">Verbindung getrennt</string>
+    <string name="home_invalidLink">Ungültiger Playlist-Link. Versuche es erneut.</string>
 </resources>

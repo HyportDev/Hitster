@@ -19,17 +19,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.hitster.R
-import com.example.hitster.home.model.HomeAction
 import com.example.hitster.home.model.SpotifyConnected
 import com.example.hitster.home.model.SpotifyDisconnected
 import com.example.hitster.home.model.SpotifyItem
 import com.example.hitster.home.model.SpotifyLoading
 
 @Composable
-internal fun SpotifyView(spotifyItem: SpotifyItem, onAction: (HomeAction) -> Unit) {
+internal fun SpotifyView(spotifyItem: SpotifyItem) {
     Card(
-        shape = RoundedCornerShape(50),
-        onClick = { spotifyItem.action?.let(onAction) }
+        shape = RoundedCornerShape(50)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -41,7 +39,7 @@ internal fun SpotifyView(spotifyItem: SpotifyItem, onAction: (HomeAction) -> Uni
                 painter = painterResource(R.drawable.spotify_icon),
                 contentDescription = "Spotify"
             )
-            Text(text = stringResource(spotifyItem.title), fontSize = 12.sp)
+            Text(text = stringResource(spotifyItem.title), fontSize = 12.sp, maxLines = 1)
         }
     }
 }
@@ -51,9 +49,9 @@ internal fun SpotifyView(spotifyItem: SpotifyItem, onAction: (HomeAction) -> Uni
 fun Preview() {
     MaterialTheme {
         Column {
-            SpotifyView(SpotifyLoading) { }
-            SpotifyView(SpotifyDisconnected) { }
-            SpotifyView(SpotifyConnected) { }
+            SpotifyView(SpotifyLoading)
+            SpotifyView(SpotifyDisconnected)
+            SpotifyView(SpotifyConnected)
         }
     }
 }

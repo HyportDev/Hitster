@@ -1,6 +1,6 @@
 package com.example.hitster.game.usecase
 
-import com.example.hitster.game.data.AccessTokenProvider
+import com.example.hitster.data.AccessTokenProvider
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

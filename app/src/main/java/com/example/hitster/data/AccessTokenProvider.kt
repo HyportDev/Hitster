@@ -1,4 +1,4 @@
-package com.example.hitster.game.data
+package com.example.hitster.data
 
 class AccessTokenProvider {
     private var accessToken: String? = null

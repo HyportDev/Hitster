@@ -1,23 +1,24 @@
 package com.example.hitster.home
 
-import android.content.res.Resources
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.hitster.data.AccessTokenProvider
 import com.example.hitster.R
-import com.example.hitster.home.model.HomeAction.AddPlaylists
-import com.example.hitster.home.model.HomeAction.RemovePlayer
+import com.example.hitster.home.model.HomeAction
+import com.example.hitster.home.model.HomeAction.*
 import com.example.hitster.home.model.HomeDialogState
 import com.example.hitster.home.model.HomeDialogState.DeleteDialog
+import com.example.hitster.home.model.HomeDialogState.PlaylistDialog
 import com.example.hitster.home.model.HomeDialogState.SelectionDialog
 import com.example.hitster.home.model.HomePlayerInputState
 import com.example.hitster.home.model.HomeViewState
 import com.example.hitster.home.model.Playlist
 import com.example.hitster.home.model.PlaylistSelectionItem
 import com.example.hitster.home.model.PlaylistViewState
-import com.example.hitster.home.model.SpotifyConnected
-import com.example.hitster.home.model.SpotifyDisconnected
+import com.example.hitster.res.Text
+import com.example.hitster.res.toText
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -30,7 +31,9 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(
+    private val accessTokenProvider: AccessTokenProvider
+) : ViewModel() {
     private val _viewState = MutableStateFlow(HomeViewState())
     val viewState = _viewState.asStateFlow()
 
@@ -39,11 +42,37 @@ class HomeViewModel : ViewModel() {
 
     private var spotifyPlaylists = emptyList<Playlist>()
 
-    fun changePlayerInput(value: String) {
+    fun onAction(action: HomeAction) {
+        when (action) {
+            is AddPlayer -> addPlayer(action.name)
+            AddPlaylistByLink -> updateAddPlaylistDialog()
+            AddPlaylistFromLibrary -> loadUserPlaylists(accessTokenProvider.getAccessToken())
+            DismissDialog -> closeDialog()
+            is OnPlayerInputChange -> changePlayerInput(action.value)
+            is OpenRemovePlayerDialog -> openRemovePlayerDialog(action.name)
+            is RemovePlayer -> {
+                closeDialog()
+                removePlayer(action.name)
+            }
+            is RemovePlaylist -> removePlaylist(action.playlist)
+            is AddPlaylists -> {
+                closeDialog()
+                addPlaylists(action.playlists)
+            }
+            is OnDialogItemChecked -> toggleSelectionValue(action.item, action.checked)
+            is AddPlaylist -> {
+                closeDialog()
+                addPlaylist(action.playlistUrl)
+            }
+            is AddPlaylistByLinkValueChange -> updateAddPlaylistDialog(action.link)
+        }
+    }
+
+    private fun changePlayerInput(value: String) {
         _viewState.update { it.copy(playerInputState = HomePlayerInputState.Editing(value)) }
     }
 
-    fun addPlayer(name: String) {
+    private fun addPlayer(name: String) {
         val trimmedName = name.trim()
         _viewState.update {
             when {
@@ -62,39 +91,47 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun setSpotifyState(connected: Boolean) {
-        _viewState.update {
-            if (connected) {
-                it.copy(spotifyItem = SpotifyConnected)
-            } else {
-                it.copy(spotifyItem = SpotifyDisconnected)
-            }
-        }
-    }
-
-    fun removePlayer(name: String) {
+    private fun removePlayer(name: String) {
         _viewState.update { it.copy(players = it.players - name) }
     }
 
-    fun openRemovePlayerDialog(name: String, resources: Resources) {
+    private fun openRemovePlayerDialog(name: String) {
         _viewState.update {
             it.copy(dialogState = DeleteDialog(
-                text = resources.getString(R.string.home_deletePlayer, name),
+                text = Text.Resource(R.string.home_deletePlayer, name),
                 action = RemovePlayer(name)
             )
             )
         }
     }
 
-    fun closeDialog() {
+    private fun updateAddPlaylistDialog(value: String = "") {
+        _viewState.update {
+            it.copy(dialogState = PlaylistDialog(
+                text = value.toText(),
+                action = AddPlaylist(value)
+            )
+            )
+        }
+    }
+
+    private fun closeDialog() {
         _viewState.update { it.copy(dialogState = HomeDialogState.Closed) }
     }
 
-    fun addPlaylist(id: String, accessToken: String?) {
-        loadPlaylistName(playlistId = id, accessToken = accessToken)
+    private fun addPlaylist(playlistUrl: String) {
+        val playlistLink = playlistUrl.trim()
+        if (playlistLink.startsWith("https://open.spotify.com/playlist/")) {
+            val id = playlistLink.split("playlist/")[1].split("?")[0]
+            loadPlaylistName(playlistId = id, accessTokenProvider.getAccessToken())
+        } else {
+            viewModelScope.launch {
+                sendEvent(R.string.home_invalidLink)
+            }
+        }
     }
 
-    fun removePlaylist(playlist: Playlist) {
+    private fun removePlaylist(playlist: Playlist) {
         val newPlaylists = _viewState.value.playlists.toMutableList()
             .filterNot { (it as PlaylistViewState.Success).playlist == playlist }
         _viewState.update { state ->
@@ -102,13 +139,13 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun addPlaylists(playlists: List<Playlist>) {
+    private fun addPlaylists(playlists: List<Playlist>) {
         _viewState.update { state ->
             state.copy(playlists = state.playlists + playlists.map { PlaylistViewState.Success(it) })
         }
     }
 
-    fun toggleSelectionValue(selectionItem: PlaylistSelectionItem, checked: Boolean) {
+    private fun toggleSelectionValue(selectionItem: PlaylistSelectionItem, checked: Boolean) {
         if (_viewState.value.dialogState is SelectionDialog) {
             _viewState.update { state ->
                 val dialogState = (state.dialogState as SelectionDialog)
@@ -177,7 +214,7 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun loadUserPlaylists(accessToken: String?, resources: Resources) {
+    private fun loadUserPlaylists(accessToken: String?) {
         accessToken?.let { token ->
             viewModelScope.launch {
                 val playlists = fetchUserPlaylists(token)
@@ -185,7 +222,7 @@ class HomeViewModel : ViewModel() {
                     spotifyPlaylists = playlists
                     _viewState.update { state ->
                         state.copy(dialogState = SelectionDialog(
-                            text = resources.getString(R.string.home_selectPlaylists),
+                            text = R.string.home_selectPlaylists.toText(),
                             selectionItems = playlists.map {
                                 PlaylistSelectionItem(playlist =  it)
                             },

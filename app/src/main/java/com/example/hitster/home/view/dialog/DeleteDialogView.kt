@@ -1,4 +1,4 @@
-package com.example.hitster.home.view
+package com.example.hitster.home.view.dialog
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -13,14 +13,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.hitster.ui.HitsterTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeleteDialogView(title: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    BasicAlertDialog(
-        onDismissRequest = onDismiss
-    ) {
+    BasicAlertDialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier.wrapContentWidth().wrapContentHeight(),
             shape = MaterialTheme.shapes.large,
@@ -32,5 +32,13 @@ fun DeleteDialogView(title: String, onConfirm: () -> Unit, onDismiss: () -> Unit
                 DialogButtonRow(onDismiss = onDismiss, onConfirm = onConfirm)
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun DeleteDialogPreview() {
+    HitsterTheme {
+        DeleteDialogView(title = "Do you want to delete XY?", {}, {})
     }
 }

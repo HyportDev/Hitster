@@ -1,21 +1,21 @@
 package com.example.hitster.game.model
 
-import android.content.res.Resources
 import com.example.hitster.R
+import com.example.hitster.res.toText
 
 data class Player(
     val name: String,
     val songs: List<Song> = emptyList()
 ) {
     companion object {
-        fun initialise(name: String, resources: Resources): Player {
+        fun initialise(name: String): Player {
             val randomYear = (1980..2010).random()
             return Player(
                 name = name,
                 songs = listOf(
                     Song(
-                        title = resources.getString(R.string.home_startingPoint),
-                        artist = resources.getString(R.string.home_startingPoint),
+                        title = R.string.home_startingPoint.toText(),
+                        artist = R.string.home_startingPoint.toText(),
                         releaseYear = randomYear
                     )
                 )
