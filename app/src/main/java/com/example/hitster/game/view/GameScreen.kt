@@ -15,11 +15,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,13 +38,6 @@ import com.example.hitster.game.model.Player
 import com.example.hitster.game.model.PlayerItem
 import com.example.hitster.game.model.Song
 import com.example.hitster.game.model.SongItem
-import com.example.hitster.game.model.SongItemColor
-import com.example.hitster.game.model.SongItemColor.AQUA
-import com.example.hitster.game.model.SongItemColor.BLUE
-import com.example.hitster.game.model.SongItemColor.GREEN
-import com.example.hitster.game.model.SongItemColor.LIGHT_PURPLE
-import com.example.hitster.game.model.SongItemColor.PURPLE
-import com.example.hitster.game.model.SongItemColor.YELLOW
 import com.example.hitster.game.model.UnknownSong
 import com.example.hitster.game.view.SongCardValidation.Companion.toSongCardValidation
 import com.example.hitster.res.toText
@@ -85,8 +80,9 @@ internal fun GameScreen(state: GameViewState, onAction: (GameAction) -> Unit) {
 }
 
 private fun LazyListScope.playerList(playerItems: List<PlayerItem>, onAction: (GameAction) -> Unit) {
-    items(playerItems) {
+    items(playerItems, key = { it.playerName }) {
         PlayerCard(
+            modifier = Modifier.animateItem(),
             playerName = it.playerName,
             selected = it.isSelected,
             onClick = { onAction(GameAction.OnSelectPlayer(it)) }
@@ -100,6 +96,11 @@ private fun SongRow(
     primaryButton: ButtonState,
     onAction: (GameAction) -> Unit
 ) {
+    val listState = rememberLazyListState()
+    LaunchedEffect(songItems.size) {
+        val indexOfUnknownSong = songItems.indexOfFirst { it is UnknownSong }
+        if (indexOfUnknownSong > 0) listState.animateScrollToItem(indexOfUnknownSong)
+    }
     Column {
         Text(
             modifier = Modifier.padding(top = 16.dp, start = 16.dp),
@@ -111,29 +112,34 @@ private fun SongRow(
         )
         LazyRow(
             modifier = Modifier.fillMaxWidth().heightIn(50.dp, 200.dp),
+            state = listState,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(16.dp)
         ) {
-            items(songItems) { songItem ->
+            items(songItems, key = { item -> item.id }) { songItem ->
                 when (songItem) {
                     is Song ->
                         SongCard(
+                            modifier = Modifier.animateItem(),
                             title = songItem.title.getString(),
                             artist = songItem.artist.getString(),
                             year = songItem.releaseYear.toString(),
                             validation = songItem.correctLocation.toSongCardValidation(),
-                            color = songItem.color.getColor()
+                            color = songItem.color ?: Color(0xffcfd8dc)
                         )
 
-                    is UnknownSong -> GuessCard(
-                        onClickSubmit = { onAction(Guess) },
-                        onClickLeft = if (songItem.canMoveLeft) {
-                            { onAction(GameAction.MoveLeft) }
-                        } else null,
-                        onClickRight = if (songItem.canMoveRight) {
-                            { onAction(GameAction.MoveRight) }
-                        } else null
-                    )
+                    is UnknownSong -> {
+                        GuessCard(
+                            modifier = Modifier.animateItem(),
+                            onClickSubmit = { onAction(Guess) },
+                            onClickLeft = if (songItem.canMoveLeft) {
+                                { onAction(GameAction.MoveLeft) }
+                            } else null,
+                            onClickRight = if (songItem.canMoveRight) {
+                                { onAction(GameAction.MoveRight) }
+                            } else null
+                        )
+                    }
                 }
             }
         }
@@ -150,18 +156,6 @@ private fun SongRow(
         }
     }
 
-}
-
-private fun SongItemColor?.getColor(): Color {
-    return when(this) {
-        YELLOW -> Color(0xfffbc02d)
-        GREEN -> Color(0xff8bc34a)
-        AQUA -> Color(0xffb2dfdb)
-        LIGHT_PURPLE -> Color(0xffe1bee7)
-        BLUE -> Color(0xff03a9f4)
-        PURPLE -> Color(0xff9c27b0)
-        null -> Color(0xffcfd8dc)
-    }
 }
 
 @Preview(showBackground = true)
@@ -182,9 +176,9 @@ fun GameScreenPreview() {
                 PlayerItem("Lily", false, false)
             ),
             songItems = listOf(
-            Song("That's Amore".toText(), "Dean Martin".toText(), 1953),
-            Song("Alles nur geklaut".toText(), "Die Prinzen".toText(), 1993),
-            Song("Anyone".toText(), "Justin Bieber".toText(), 2021)
-        )), {})
+                Song("That's Amore".toText(), "Dean Martin".toText(), 1953),
+                Song("Alles nur geklaut".toText(), "Die Prinzen".toText(), 1993),
+                Song("Anyone".toText(), "Justin Bieber".toText(), 2021)
+            )), {})
     }
 }

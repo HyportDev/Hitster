@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -23,6 +26,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 internal fun SongCard(
+    modifier: Modifier = Modifier,
     title: String,
     artist: String,
     year: String,
@@ -30,7 +34,7 @@ internal fun SongCard(
     validation: SongCardValidation? = null
 ) {
     Card(
-        modifier = Modifier.aspectRatio(1f),
+        modifier = modifier.aspectRatio(1f),
         colors = CardDefaults.cardColors().copy(containerColor = color),
         border = validation?.let { BorderStroke(2.dp, validation.color) }
     ) {
@@ -46,13 +50,18 @@ internal fun SongCard(
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            Text(
+            BasicText(
                 modifier = Modifier.fillMaxWidth(),
                 text = year,
-                color = Color.Black,
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                style = TextStyle(
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                ),
+                autoSize = TextAutoSize.StepBased(),
+                maxLines = 1,
+                softWrap = true,
+                color = { Color.Black },
             )
             Text(
                 modifier = Modifier.fillMaxWidth(),
@@ -88,7 +97,7 @@ fun SongCardPreview() {
             title = "Alles nur geklaut",
             artist = "Die Prinzen",
             year = "1993",
-            Color(0xffcfd8dc)
+            color = Color(0xffcfd8dc)
         )
     }
 }

@@ -1,6 +1,7 @@
 package com.example.hitster.game
 
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hitster.game.usecase.ConnectToSpotifyUseCase
@@ -19,7 +20,6 @@ import com.example.hitster.game.model.MusicButtonItem
 import com.example.hitster.game.model.Player
 import com.example.hitster.game.model.PlayerItem
 import com.example.hitster.game.model.Song
-import com.example.hitster.game.model.SongItemColor
 import com.example.hitster.game.model.UnknownSong
 import com.example.hitster.game.model.getGuessCardPosition
 import com.example.hitster.game.model.getGuessedYearRange
@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 class GameViewModel(
     playerNames: List<String>,
@@ -196,7 +197,7 @@ class GameViewModel(
             if (player != null && song != null) {
                 val songPosition = songItems.getGuessCardPosition()
                 val guessedCorrectLocation = checkGuess(song, songPosition)
-                val color = SongItemColor.entries.random()
+                val color = Color(Random.nextLong()).copy(alpha = 1f)
 
                 if (guessedCorrectLocation) {
                     // Add song to the player's song list
