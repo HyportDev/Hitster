@@ -1,6 +1,13 @@
 package com.example.hitster.game.view
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -15,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -34,13 +42,17 @@ internal fun SongCard(
     color: Color,
     validation: SongCardValidation? = null
 ) {
+    val newModifier: Modifier = validation?.let {
+        Modifier.background(radiantShimmer(it.color))
+    } ?: Modifier
+
     Card(
         modifier = modifier.aspectRatio(1f),
         colors = CardDefaults.cardColors().copy(containerColor = color),
         border = validation?.let { BorderStroke(2.dp, validation.color) }
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(vertical = 16.dp, horizontal = 8.dp),
+            modifier = newModifier.fillMaxSize().padding(vertical = 16.dp, horizontal = 8.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
@@ -92,6 +104,36 @@ enum class SongCardValidation(val color: Color) {
                 null -> null
             }
     }
+}
+
+@Composable
+private fun radiantShimmer(color: Color): Brush {
+    val shimmerColors = listOf(
+        color.copy(alpha = 0.3f),
+        color.copy(alpha = 0.5f),
+        color.copy(alpha = 1.0f),
+        color.copy(alpha = 0.5f),
+        color.copy(alpha = 0.3f),
+    )
+
+    val transition = rememberInfiniteTransition(label = "")
+
+    val translateAnimation = transition.animateFloat(
+        initialValue = 10f,
+        targetValue = (1000 + 500).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 2000,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "Shimmer loading animation",
+    )
+    return Brush.radialGradient(
+        colors = shimmerColors,
+        radius = translateAnimation.value
+    )
 }
 
 @Preview
