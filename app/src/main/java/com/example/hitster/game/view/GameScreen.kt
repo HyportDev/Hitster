@@ -155,7 +155,6 @@ private fun SongRow(
             }
         }
     }
-
 }
 
 @Preview(showBackground = true)

@@ -197,7 +197,7 @@ class GameViewModel(
             if (player != null && song != null) {
                 val songPosition = songItems.getGuessCardPosition()
                 val guessedCorrectLocation = checkGuess(song, songPosition)
-                val color = Color(Random.nextLong()).copy(alpha = 1f)
+                val color = generateColor()
 
                 if (guessedCorrectLocation) {
                     // Add song to the player's song list
@@ -251,6 +251,13 @@ class GameViewModel(
 
     private fun setCurrentSong(song: Song) {
         _viewState.update { it.copy(currentSong = song) }
+    }
+
+    private fun generateColor() : Color {
+        val red = Random.nextInt(200, 256)
+        val green = Random.nextInt(200, 256)
+        val blue = Random.nextInt(200, 256)
+        return Color(red, green, blue)
     }
 
     companion object {
