@@ -20,6 +20,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +40,7 @@ internal fun SongCard(
         border = validation?.let { BorderStroke(2.dp, validation.color) }
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(vertical = 16.dp, horizontal = 8.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
@@ -47,11 +48,13 @@ internal fun SongCard(
                 text = artist,
                 color = Color.Black,
                 fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             BasicText(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                 text = year,
                 style = TextStyle(
                     fontSize = 48.sp,
@@ -68,6 +71,8 @@ internal fun SongCard(
                 text = title,
                 color = Color.Black,
                 fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 fontStyle = FontStyle.Italic,
                 textAlign = TextAlign.Center
             )
