@@ -5,7 +5,8 @@ import com.example.hitster.res.toText
 
 data class Player(
     val name: String,
-    val songs: List<Song> = emptyList()
+    val songs: List<Song> = emptyList(),
+    val tokens: Int = 2
 ) {
     companion object {
         fun initialise(name: String): Player {
@@ -18,7 +19,8 @@ data class Player(
                         artist = R.string.home_startingPoint.toText(),
                         releaseYear = randomYear
                     )
-                )
+                ),
+                tokens = 2
             )
         }
     }

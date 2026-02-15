@@ -1,6 +1,7 @@
 package com.example.hitster.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
@@ -19,28 +20,43 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.hitster.R
 
 @Composable
 fun PlayerCard(
     modifier: Modifier = Modifier,
     playerName: String,
+    tokens: Int = 0,
     onClick: () -> Unit,
     selected: Boolean = false
 ) {
     PlayerCardContent(modifier = modifier, selected = selected, onClick = onClick) {
-        Text(
-            text = playerName,
-            color = if (selected) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.colorScheme.onPrimaryContainer
-            }
-        )
+        Column {
+            Text(
+                text = playerName,
+                fontWeight = FontWeight.Bold,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                }
+            )
+            Text(
+                text = "Tokens: $tokens",
+                fontSize = 12.sp,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                }
+            )
+        }
     }
 }
 
