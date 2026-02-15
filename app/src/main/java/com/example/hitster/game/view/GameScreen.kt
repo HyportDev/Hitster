@@ -2,7 +2,11 @@ package com.example.hitster.game.view
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,14 +35,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.hitster.game.model.ButtonState
+import com.example.hitster.R
 import com.example.hitster.game.model.GameAction
 import com.example.hitster.game.model.GameAction.Guess
 import com.example.hitster.game.model.GameViewState
 import com.example.hitster.game.model.Player
 import com.example.hitster.game.model.PlayerItem
 import com.example.hitster.game.model.Song
-import com.example.hitster.game.model.SongItem
 import com.example.hitster.game.model.UnknownSong
 import com.example.hitster.game.view.SongCardValidation.Companion.toSongCardValidation
 import com.example.hitster.res.toText
@@ -49,67 +53,108 @@ import com.example.hitster.ui.PlayerCard
 internal fun GameScreen(state: GameViewState, onAction: (GameAction) -> Unit) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (isLandscape) {
-            Row(modifier = Modifier.weight(1f)) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxHeight().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    playerList(state.playerItems, onAction)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (isLandscape) {
+                Row(modifier = Modifier.weight(1f)) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxHeight().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        playerList(state, onAction)
+                    }
+                    SongRow(state, onAction)
                 }
-                SongRow(state.songItems, state.primaryButton, onAction)
-            }
-        } else {
-            Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    playerList(state.playerItems, onAction)
+            } else {
+                Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        playerList(state, onAction)
+                    }
+                    SongRow(state, onAction)
                 }
-                SongRow(state.songItems, state.primaryButton, onAction)
             }
+
+            MusicButtonSection(state.musicButton, state.primaryButton.action, onAction)
         }
 
-        MusicButtonSection(state.musicButton, state.primaryButton.action, onAction)
+        AnimatedVisibility(
+            visible = state.message != null,
+            modifier = Modifier.align(Alignment.Center),
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
+                Text(
+                    text = state.message ?: "",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }
 
-private fun LazyListScope.playerList(playerItems: List<PlayerItem>, onAction: (GameAction) -> Unit) {
-    items(playerItems, key = { it.playerName }) {
-        PlayerCard(
-            modifier = Modifier.animateItem(),
-            playerName = it.playerName,
-            selected = it.isSelected,
-            onClick = { onAction(GameAction.OnSelectPlayer(it)) }
-        )
+private fun LazyListScope.playerList(state: GameViewState, onAction: (GameAction) -> Unit) {
+    items(state.playerItems, key = { it.playerName }) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            PlayerCard(
+                modifier = Modifier.animateItem(),
+                playerName = it.playerName,
+                tokens = it.tokens,
+                selected = it.isSelected,
+                onClick = { onAction(GameAction.OnSelectPlayer(it)) }
+            )
+            if (!it.isCurrentPlayer && it.tokens > 0 && !state.isStealInProgress && state.currentSong != null) {
+                Button(
+                    modifier = Modifier.padding(top = 4.dp),
+                    title = stringResource(R.string.game_useToken),
+                    primary = false,
+                    onClick = { onAction(GameAction.UseToken(it)) }
+                )
+            }
+        }
     }
 }
 
 @Composable
 private fun SongRow(
-    songItems: List<SongItem>,
-    primaryButton: ButtonState,
+    state: GameViewState,
     onAction: (GameAction) -> Unit
 ) {
+    val songItems = state.songItems
+    val primaryButton = state.primaryButton
+    val skipButton = state.skipButton
+    val addTokenButton = state.addTokenButton
     val listState = rememberLazyListState()
     LaunchedEffect(songItems.size) {
         val indexOfUnknownSong = songItems.indexOfFirst { it is UnknownSong }
         if (indexOfUnknownSong > 0) listState.animateScrollToItem(indexOfUnknownSong)
     }
     Column {
-        Text(
-            modifier = Modifier.padding(top = 16.dp, start = 16.dp),
-            text = "Songs: " + songItems
-                .filter { it is Song && it.correctLocation != false }
-                .size,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.secondary
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                modifier = Modifier.padding(top = 16.dp),
+                text = "Songs: " + songItems
+                    .filter { it is Song && it.correctLocation != false }
+                    .size,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        }
         LazyRow(
             modifier = Modifier.fillMaxWidth().heightIn(50.dp, 200.dp),
             state = listState,
@@ -144,14 +189,42 @@ private fun SongRow(
             }
         }
 
-        with(primaryButton) {
-            AnimatedVisibility(isVisible) {
-                Button(
-                    modifier = Modifier.padding(16.dp),
-                    title = title?.let { stringResource(it) } ?: "",
-                    primary = true,
-                    onClick = { onAction(action) }
-                )
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            with(primaryButton) {
+                AnimatedVisibility(isVisible) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = title?.let { stringResource(it) } ?: "",
+                        primary = true,
+                        onClick = { onAction(action) }
+                    )
+                }
+            }
+
+            with(skipButton) {
+                AnimatedVisibility(isVisible) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = title?.let { stringResource(it) } ?: "",
+                        primary = false,
+                        onClick = { onAction(action) }
+                    )
+                }
+            }
+
+            with(addTokenButton) {
+                AnimatedVisibility(isVisible) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = title?.let { stringResource(it) } ?: "",
+                        primary = false,
+                        onClick = { onAction(action) }
+                    )
+                }
             }
         }
     }
@@ -170,9 +243,9 @@ fun GameScreenPreview() {
             )
         ),
             playerItems = listOf(
-                PlayerItem("Timo", true, true),
-                PlayerItem("Luno", false, false),
-                PlayerItem("Lily", false, false)
+                PlayerItem("Timo", true, true, 2),
+                PlayerItem("Luno", false, false, 1),
+                PlayerItem("Lily", false, false, 0)
             ),
             songItems = listOf(
                 Song("That's Amore".toText(), "Dean Martin".toText(), 1953),

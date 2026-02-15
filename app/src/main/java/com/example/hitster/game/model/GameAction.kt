@@ -8,4 +8,7 @@ sealed interface GameAction {
     data object Guess : GameAction
     data object NextPlayer : GameAction
     data class OnSelectPlayer(val playerItem: PlayerItem) : GameAction
+    data object SkipSong : GameAction
+    data class UseToken(val playerItem: PlayerItem) : GameAction
+    data object AddToken : GameAction
 }
