@@ -20,4 +20,5 @@
     <string name="home_spotifyLoading">Lädt</string>
     <string name="home_spotifyDisconnected">Verbindung getrennt</string>
     <string name="home_invalidLink">Ungültiger Playlist-Link. Versuche es erneut.</string>
+    <string name="game_add_token">Titel und Interpreten geraten</string>
 </resources>

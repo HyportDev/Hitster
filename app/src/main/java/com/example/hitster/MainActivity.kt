@@ -18,6 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -68,9 +69,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     composable<Home> {
                         val viewModel: HomeViewModel = koinViewModel()
-                        val state = viewModel.viewState.collectAsStateWithLifecycle().value
-                        val spotifyState = mainViewModel.spotifyState
-                            .collectAsStateWithLifecycle().value
+                        val state by viewModel.viewState.collectAsStateWithLifecycle()
+                        val spotifyState by mainViewModel.spotifyState.collectAsStateWithLifecycle()
                         HomeScreen(
                             state = state,
                             spotifyState = spotifyState,
@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
                         DisposableEffect(backStackEntry) {
                             onDispose { viewModel.closeSpotifyConnection() }
                         }
-                        val state = viewModel.viewState.collectAsStateWithLifecycle().value
+                        val state by viewModel.uiState.collectAsStateWithLifecycle()
                         GameScreen(
                             state = state,
                             onAction = viewModel::onAction

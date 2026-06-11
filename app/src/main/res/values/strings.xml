@@ -22,4 +22,5 @@
     <string name="game_play" translatable="false">Play Music</string>
     <string name="game_pause" translatable="false">Pause Music</string>
     <string name="home_invalidLink">Invalid playlist link. Try again.</string>
+    <string name="game_add_token">Title and Artist guessed</string>
 </resources>

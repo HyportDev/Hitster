@@ -30,12 +30,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.hitster.R
 import com.example.hitster.game.model.ButtonState
 import com.example.hitster.game.model.GameAction
+import com.example.hitster.game.model.GameAction.AddToken
 import com.example.hitster.game.model.GameAction.Guess
-import com.example.hitster.game.model.GameViewState
+import com.example.hitster.game.model.GameUiState
+import com.example.hitster.game.model.MusicButtonItem
 import com.example.hitster.game.model.Player
-import com.example.hitster.game.model.PlayerItem
 import com.example.hitster.game.model.Song
 import com.example.hitster.game.model.SongItem
 import com.example.hitster.game.model.UnknownSong
@@ -46,7 +48,7 @@ import com.example.hitster.ui.HitsterTheme
 import com.example.hitster.ui.PlayerCard
 
 @Composable
-internal fun GameScreen(state: GameViewState, onAction: (GameAction) -> Unit) {
+internal fun GameScreen(state: GameUiState, onAction: (GameAction) -> Unit) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     Column(
@@ -59,19 +61,41 @@ internal fun GameScreen(state: GameViewState, onAction: (GameAction) -> Unit) {
                     modifier = Modifier.fillMaxHeight().padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    playerList(state.playerItems, onAction)
+                    playerList(state.players, onAction)
                 }
-                SongRow(state.songItems, state.primaryButton, onAction)
+                state.players.find { it.isSelected }?.let {
+                    SongRow(it.songs, state.primaryButton, onAction)
+                }
             }
         } else {
-            Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+            Column(modifier = Modifier.weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+            ) {
                 LazyRow(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    playerList(state.playerItems, onAction)
+                    playerList(state.players, onAction)
                 }
-                SongRow(state.songItems, state.primaryButton, onAction)
+                state.players.find { it.isSelected }?.let {
+                    SongRow(it.songs, state.primaryButton, onAction)
+                }
+                AnimatedVisibility(state.isAddTokenButtonVisible && state.players.any { it.isSelected && it.isCurrentPlayer}) {
+                    Button(
+                        modifier = Modifier.padding(
+                            start = 16.dp,
+                            end = 16.dp
+                        ),
+                        title = stringResource(R.string.game_add_token),
+                        primary = true,
+                        onClick = {
+                            state.players.find { it.isSelected }?.let {
+                                onAction(AddToken(it))
+                            }
+                        }
+                    )
+                }
             }
         }
 
@@ -79,13 +103,14 @@ internal fun GameScreen(state: GameViewState, onAction: (GameAction) -> Unit) {
     }
 }
 
-private fun LazyListScope.playerList(playerItems: List<PlayerItem>, onAction: (GameAction) -> Unit) {
-    items(playerItems, key = { it.playerName }) {
+private fun LazyListScope.playerList(playerItems: List<Player>, onAction: (GameAction) -> Unit) {
+    items(playerItems, key = { it.name }) {
         PlayerCard(
             modifier = Modifier.animateItem(),
-            playerName = it.playerName,
+            playerName = it.name,
             selected = it.isSelected,
-            onClick = { onAction(GameAction.OnSelectPlayer(it)) }
+            tokens = it.tokens,
+            onClick = { onAction(GameAction.OnPlayerClick(it)) }
         )
     }
 }
@@ -161,23 +186,29 @@ private fun SongRow(
 @Composable
 fun GameScreenPreview() {
     HitsterTheme {
-        GameScreen(GameViewState.initial().copy(currentPlayer = Player(
-            name = "Luno",
-            songs = listOf(
-                Song("That's Amore".toText(), "Dean Martin".toText(), 1953),
-                Song("Alles nur geklaut".toText(), "Die Prinzen".toText(), 1993),
-                Song("Anyone".toText(), "Justin Bieber".toText(), 2021)
-            )
-        ),
-            playerItems = listOf(
-                PlayerItem("Timo", true, true),
-                PlayerItem("Luno", false, false),
-                PlayerItem("Lily", false, false)
+        GameScreen(GameUiState(
+            currentSong = Song("That's Amore".toText(), "Dean Martin".toText(), 1953),
+            players = listOf(
+                Player(
+                    name = "Timo",
+                    songs = listOf(
+                        Song("That's Amore".toText(), "Dean Martin".toText(), 1953),
+                        Song("Alles nur geklaut".toText(), "Die Prinzen".toText(), 1993),
+                        Song("Anyone".toText(), "Justin Bieber".toText(), 2021)
+                    ),
+                    isCurrentPlayer = true,
+                    isSelected = true,
+                    tokens = 2
+                ),
+                Player("Luno", emptyList(), false, false, 1),
+                Player("Lily", emptyList(), false, false, 0)
             ),
-            songItems = listOf(
-                Song("That's Amore".toText(), "Dean Martin".toText(), 1953),
-                Song("Alles nur geklaut".toText(), "Die Prinzen".toText(), 1993),
-                Song("Anyone".toText(), "Justin Bieber".toText(), 2021)
-            )), {})
+            musicButton = MusicButtonItem.PAUSE,
+            primaryButton = ButtonState(
+                isVisible = true,
+                title = R.string.game_buttonGuess,
+                action = Guess
+            )
+        ), {})
     }
 }

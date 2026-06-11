@@ -4,27 +4,28 @@ import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.hitster.game.usecase.ConnectToSpotifyUseCase
 import com.example.hitster.R
 import com.example.hitster.game.model.ButtonState
 import com.example.hitster.game.model.GameAction
+import com.example.hitster.game.model.GameAction.AddToken
 import com.example.hitster.game.model.GameAction.Guess
 import com.example.hitster.game.model.GameAction.MoveLeft
 import com.example.hitster.game.model.GameAction.MoveRight
 import com.example.hitster.game.model.GameAction.NextPlayer
 import com.example.hitster.game.model.GameAction.OnPauseClick
 import com.example.hitster.game.model.GameAction.OnPlayClick
-import com.example.hitster.game.model.GameAction.OnSelectPlayer
-import com.example.hitster.game.model.GameViewState
+import com.example.hitster.game.model.GameAction.OnPlayerClick
+import com.example.hitster.game.model.GameUiState
 import com.example.hitster.game.model.MusicButtonItem
 import com.example.hitster.game.model.Player
-import com.example.hitster.game.model.PlayerItem
 import com.example.hitster.game.model.Song
+import com.example.hitster.game.model.SongItem
 import com.example.hitster.game.model.UnknownSong
 import com.example.hitster.game.model.getGuessCardPosition
 import com.example.hitster.game.model.getGuessedYearRange
 import com.example.hitster.game.model.moveSongItemLeft
 import com.example.hitster.game.model.moveSongItemRight
+import com.example.hitster.game.usecase.ConnectToSpotifyUseCase
 import com.example.hitster.game.usecase.FetchPlaylistTracksUseCase
 import com.example.hitster.game.usecase.FetchTrackDetailsUseCase
 import com.spotify.android.appremote.api.SpotifyAppRemote
@@ -44,17 +45,19 @@ class GameViewModel(
 ) : ViewModel() {
 
     private var spotifyAppRemote: SpotifyAppRemote? = null
-
-    private val players: MutableList<Player> = mutableListOf()
     private val trackURIs = ArrayDeque<String>()
 
-    private var currentSongUri: String? = null
-
-    private val _viewState = MutableStateFlow(GameViewState.initial())
-    val viewState = _viewState.asStateFlow()
+    private val _uiState = MutableStateFlow(
+        GameUiState(
+            musicButton = MusicButtonItem.PLAY,
+            primaryButton = ButtonState(),
+            players = playerNames.shuffled().map { Player.initialize(it) },
+            currentSong = null
+        )
+    )
+    val uiState = _uiState.asStateFlow()
 
     init {
-        playerNames.let { players.addAll(playerNames.shuffled().map { Player.initialise(it) }) }
         fetchTracksFromPlaylists(playlists)
         nextPlayer()
     }
@@ -89,8 +92,24 @@ class GameViewModel(
             MoveLeft -> moveGuessCardLeft()
             MoveRight -> moveGuessCardRight()
             Guess -> loginGuess()
-            is OnSelectPlayer -> clickPlayer(action.playerItem)
+            is OnPlayerClick -> clickPlayer(action.player)
             NextPlayer -> nextPlayer()
+            is AddToken -> addToken(action.player)
+        }
+    }
+
+    private fun addToken(player: Player) {
+        _uiState.update { state ->
+            state.copy(
+                players = state.players.map {
+                    if (it == player) {
+                        it.copy(tokens = it.tokens + 1)
+                    } else {
+                        it
+                    }
+                },
+                isAddTokenButtonVisible = false
+            )
         }
     }
 
@@ -101,134 +120,153 @@ class GameViewModel(
     }
 
     private fun nextSong() {
-        currentSongUri = trackURIs.removeFirstOrNull()
-        currentSongUri?.let { uri ->
+        trackURIs.removeFirstOrNull()?.let { uri ->
             spotifyAppRemote?.playerApi?.play(uri)
-            _viewState.update { it.copy(musicButton = MusicButtonItem.PAUSE) }
+            _uiState.update { it.copy(musicButton = MusicButtonItem.PAUSE) }
             loadTrack(uri)
         } ?:  Log.e(LOG_TAG, "Playlist has no items left.")
     }
 
     private fun nextPlayer() {
-        val nextPlayer = players.removeLastOrNull()
-        nextPlayer?.let { player ->
-            players.add(0, player)
-            _viewState.update { state ->
-                state.copy(
-                    currentPlayer = player,
-                    songItems = player.songs + UnknownSong(),
-                    playerItems = players.map {
-                        PlayerItem(
-                            playerName = it.name,
-                            isCurrentPlayer = player == it,
-                            isSelected = player == it
-                        )
-                    },
-                    primaryButton = ButtonState(
-                        isVisible = true,
-                        title = R.string.game_buttonGuess,
-                        action = Guess
+        _uiState.update { state ->
+            val players = state.players
+                .map { player ->
+                    player.copy(
+                        isCurrentPlayer = false,
+                        isSelected = false,
+                        songs = player.songs.filterIsInstance<Song>()
+                            .filterNot { song -> song.correctLocation == false }
+                            .map { song -> song.copy(correctLocation = null) }
                     )
+                }
+                .toMutableList()
+            val newCurrentPlayer = players.removeAt(players.lastIndex)
+            players.add(
+                0,
+                newCurrentPlayer.copy(
+                    isCurrentPlayer = true,
+                    isSelected = true,
+                    songs = newCurrentPlayer.songs + UnknownSong()
                 )
-            }
-            nextSong()
+            )
+            state.copy(
+                players = players,
+                primaryButton = ButtonState(
+                    isVisible = true,
+                    title = R.string.game_buttonGuess,
+                    action = Guess
+                ),
+                isAddTokenButtonVisible = false
+            )
         }
+        nextSong()
     }
 
-    private fun clickPlayer(playerItem: PlayerItem) {
-        _viewState.update { state ->
-            val songItems = (players.find { it.name == playerItem.playerName }?.songs ?: emptyList())
-            val isCurrentPlayer = state.currentPlayer?.name == playerItem.playerName
+    private fun clickPlayer(player: Player) {
+        _uiState.update { state ->
             state.copy(
-                playerItems = state.playerItems.map { it.copy(isSelected = it == playerItem) },
-                songItems = if (isCurrentPlayer) {
-                    songItems + UnknownSong()
-                } else {
-                    songItems
-                },
-                primaryButton = state.primaryButton.copy(isVisible = isCurrentPlayer || state.currentPlayer == null)
+                players = state.players.map { it.copy(isSelected = it == player) },
+                primaryButton = state.primaryButton.copy(isVisible = player.isCurrentPlayer)
             )
         }
     }
 
     private fun playMusic() {
         spotifyAppRemote?.playerApi?.resume()
-        _viewState.update { it.copy(musicButton = MusicButtonItem.PAUSE) }
+        _uiState.update { it.copy(musicButton = MusicButtonItem.PAUSE) }
     }
 
     private fun pauseMusic() {
         spotifyAppRemote?.playerApi?.pause()
-        _viewState.update { it.copy(musicButton = MusicButtonItem.PLAY) }
+        _uiState.update { it.copy(musicButton = MusicButtonItem.PLAY) }
     }
 
     private fun moveGuessCardLeft() {
-        _viewState.update { state ->
-            val position = state.songItems.getGuessCardPosition()
-            val songItems = state.songItems.toMutableList()
-            songItems[position] = UnknownSong(
-                canMoveLeft = position > 1,
-                canMoveRight = true
-            )
-            state.copy(
-                songItems = songItems.moveSongItemLeft(position)
-            )
-        }
-    }
-
-    private fun moveGuessCardRight() {
-        _viewState.update { state ->
-            val songItems = state.songItems.toMutableList()
-            val position = songItems.getGuessCardPosition()
-            songItems[position] = UnknownSong(
-                canMoveLeft = true,
-                canMoveRight = position + 2 < songItems.size
-            )
-            state.copy(
-                songItems = songItems.moveSongItemRight(position)
-            )
-        }
-    }
-
-    private fun loginGuess() {
-        _viewState.update { state ->
-            val player = state.currentPlayer
-            val song = state.currentSong
-            val songItems = state.songItems
-            if (player != null && song != null) {
-                val songPosition = songItems.getGuessCardPosition()
-                val guessedCorrectLocation = checkGuess(song, songPosition)
-                val color = generateColor()
-
-                if (guessedCorrectLocation) {
-                    // Add song to the player's song list
-                    val newPlayerSongs = player.songs.toMutableList()
-                    newPlayerSongs.add(songPosition, song.copy(color = color))
-                    players[players.indexOf(player)] = player.copy(songs = newPlayerSongs)
-                }
-
-                // Add song to temporary shown
-                val revealedSongList = songItems.toMutableList()
-                revealedSongList[songPosition] = state.currentSong
-                    .copy(correctLocation = guessedCorrectLocation, color = color)
-
-                state.copy(
-                    currentPlayer = null,
-                    currentSong = null,
-                    songItems = revealedSongList,
-                    primaryButton = ButtonState(
-                        isVisible = true,
-                        title = R.string.game_buttonNext,
-                        action = NextPlayer
-                    )
-                )
-            } else {
+        _uiState.update { state ->
+            val currentPlayer = state.players.find { it.isCurrentPlayer }
+            val songs = currentPlayer?.songs?.toMutableList()
+            val guessCardPosition = currentPlayer?.songs?.getGuessCardPosition()
+            if (songs == null ||guessCardPosition == null || guessCardPosition == -1) {
                 state
+            } else {
+                songs[guessCardPosition] = UnknownSong(
+                    canMoveLeft = guessCardPosition > 1,
+                    canMoveRight = true
+                )
+                state.copy(
+                    players = state.players.map { player ->
+                        if (player.isCurrentPlayer) {
+                            player.copy(songs = songs.moveSongItemLeft(guessCardPosition))
+                        } else {
+                            player
+                        }
+                    }
+                )
             }
         }
     }
 
-    private fun checkGuess(song: Song, guessedIndex: Int): Boolean =
-        song.releaseYear in _viewState.value.songItems.getGuessedYearRange(guessedIndex)
+    private fun moveGuessCardRight() {
+        _uiState.update { state ->
+            val currentPlayer = state.players.find { it.isCurrentPlayer }
+            val songs = currentPlayer?.songs?.toMutableList()
+            val guessCardPosition = currentPlayer?.songs?.getGuessCardPosition()
+            if (songs == null ||guessCardPosition == null || guessCardPosition == -1) {
+                state
+            } else {
+                songs[guessCardPosition] = UnknownSong(
+                    canMoveLeft = true,
+                    canMoveRight = guessCardPosition + 2 < songs.size
+                )
+                state.copy(
+                    players = state.players.map { player ->
+                        if (player.isCurrentPlayer) {
+                            player.copy(songs = songs.moveSongItemRight(guessCardPosition))
+                        } else {
+                            player
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    private fun loginGuess() {
+        val songPosition = _uiState.value.players.find { it.isCurrentPlayer }?.songs?.getGuessCardPosition()
+        if (songPosition == null || songPosition < 0) {
+            Log.e(LOG_TAG, "No guess card found")
+            return
+        }
+        _uiState.update { state ->
+            state.copy(
+                players = state.players.map { player ->
+                    player.copy(
+                        songs = player.songs.mapIndexed { index, song ->
+                            if (state.currentSong != null && song is UnknownSong) {
+                                val guessed = checkGuess(state.currentSong, player.songs, index)
+                                state.currentSong.copy(
+                                    correctLocation = guessed,
+                                    color = generateColor()
+                                )
+                            } else {
+                                song
+                            }
+                        }
+                    )
+                },
+                currentSong = null,
+                primaryButton = ButtonState(
+                    isVisible = true,
+                    title = R.string.game_buttonNext,
+                    action = NextPlayer
+                ),
+                isAddTokenButtonVisible = true
+            )
+        }
+    }
+
+    private fun checkGuess(song: Song, playerSongs: List<SongItem>, guessedIndex: Int): Boolean =
+        song.releaseYear in playerSongs.getGuessedYearRange(guessedIndex)
 
     private fun fetchTracksFromPlaylists(playlistIds: List<String>) {
         viewModelScope.launch {
@@ -243,14 +281,14 @@ class GameViewModel(
                 fetchTrackDetailsUseCase(uri)?.let { song ->
                     setCurrentSong(song)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Log.e(LOG_TAG, "Error fetching track details")
             }
         }
     }
 
     private fun setCurrentSong(song: Song) {
-        _viewState.update { it.copy(currentSong = song) }
+        _uiState.update { it.copy(currentSong = song) }
     }
 
     private fun generateColor() : Color {
