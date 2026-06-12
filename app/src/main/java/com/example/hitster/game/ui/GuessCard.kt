@@ -1,4 +1,4 @@
-package com.example.hitster.game.view
+package com.example.hitster.game.ui
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat

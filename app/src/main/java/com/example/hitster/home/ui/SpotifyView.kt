@@ -1,4 +1,4 @@
-package com.example.hitster.home.view
+package com.example.hitster.home.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement

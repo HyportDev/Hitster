@@ -1,4 +1,4 @@
-package com.example.hitster.home.view.dialog
+package com.example.hitster.home.ui.dialog
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

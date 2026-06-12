@@ -29,10 +29,10 @@ import com.example.hitster.data.AccessTokenProvider
 import com.example.hitster.game.GameViewModel
 import com.example.hitster.game.Routes.Game
 import com.example.hitster.game.Routes.Home
-import com.example.hitster.game.view.GameScreen
+import com.example.hitster.game.ui.GameScreen
 import com.example.hitster.home.HomeViewModel
 import com.example.hitster.home.model.PlaylistViewState
-import com.example.hitster.home.view.HomeScreen
+import com.example.hitster.home.ui.HomeScreen
 import com.example.hitster.ui.HitsterTheme
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
