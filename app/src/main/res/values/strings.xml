@@ -23,4 +23,12 @@
     <string name="game_pause" translatable="false">Pause Music</string>
     <string name="home_invalidLink">Invalid playlist link. Try again.</string>
     <string name="game_add_token">Title and Artist guessed</string>
+    <string name="game_buttonReveal">Reveal song</string>
+    <string name="game_tokenHint">Drag a token into a free gap to bet against the current player</string>
+    <string name="game_tokenAllBetsPlaced">All tokens are placed</string>
+    <string name="game_tokenTakeBackHint">Tap a placed token to take it back</string>
+    <string name="game_tokenTakeBack">Take back the token of %1$s</string>
+    <string name="game_tokenWinner">%1$s bet on the right gap and wins the card!</string>
+    <string name="game_tokenRefunded">Also correct – token returned to %1$s</string>
+    <string name="game_tokenOfPlayer">Token of %1$s</string>
 </resources>

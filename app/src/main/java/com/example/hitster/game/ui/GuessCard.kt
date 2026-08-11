@@ -30,7 +30,8 @@ fun GuessCard(
     modifier: Modifier = Modifier,
     onClickSubmit: () -> Unit,
     onClickLeft: (() -> Unit)?,
-    onClickRight: (() -> Unit)?
+    onClickRight: (() -> Unit)?,
+    isSubmitEnabled: Boolean = true
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "infinite")
     val rotation by infiniteTransition.animateFloat(
@@ -47,12 +48,13 @@ fun GuessCard(
         Box(modifier = Modifier.fillMaxSize().padding(4.dp), contentAlignment = Alignment.Center) {
             IconButton(
                 modifier = Modifier.fillMaxSize(0.5f),
+                enabled = isSubmitEnabled,
                 onClick = onClickSubmit
             ) {
                 Icon(
                     modifier = Modifier.fillMaxSize(0.75f).rotate(rotation),
                     painter = painterResource(R.drawable.ic_vinyl),
-                    tint = Color.White,
+                    tint = if (isSubmitEnabled) Color.White else Color.DarkGray,
                     contentDescription = null
                 )
             }
