@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hitster.data.AccessTokenProvider
+import com.example.hitster.data.SpotifyAuthException
 import com.example.hitster.R
 import com.example.hitster.home.model.HomeAction
 import com.example.hitster.home.model.HomeAction.*
@@ -46,7 +47,7 @@ class HomeViewModel(
         when (action) {
             is AddPlayer -> addPlayer(action.name)
             AddPlaylistByLink -> updateAddPlaylistDialog()
-            AddPlaylistFromLibrary -> loadUserPlaylists(accessTokenProvider.getAccessToken())
+            AddPlaylistFromLibrary -> loadUserPlaylists()
             DismissDialog -> closeDialog()
             is OnPlayerInputChange -> changePlayerInput(action.value)
             is OpenRemovePlayerDialog -> openRemovePlayerDialog(action.name)
@@ -123,7 +124,7 @@ class HomeViewModel(
         val playlistLink = playlistUrl.trim()
         if (playlistLink.startsWith("https://open.spotify.com/playlist/")) {
             val id = playlistLink.split("playlist/")[1].split("?")[0]
-            loadPlaylistName(playlistId = id, accessTokenProvider.getAccessToken())
+            loadPlaylistName(playlistId = id)
         } else {
             viewModelScope.launch {
                 sendEvent(R.string.home_invalidLink)
@@ -166,8 +167,8 @@ class HomeViewModel(
         }
     }
 
-    private fun loadPlaylistName(playlistId: String, accessToken: String?) {
-        if (hasPlaylist(playlistId) || accessToken == null) {
+    private fun loadPlaylistName(playlistId: String) {
+        if (hasPlaylist(playlistId)) {
             return
         }
         viewModelScope.launch {
@@ -176,7 +177,7 @@ class HomeViewModel(
                 it.copy(playlists = playlists + PlaylistViewState.Loading)
             }
 
-            val result = fetchPlaylistName(playlistId, accessToken)
+            val result = accessToken()?.let { token -> fetchPlaylistName(playlistId, token) }
             _viewState.update {
                 if (result != null) {
                     val newPlaylist = Playlist(id = playlistId, result)
@@ -214,24 +215,32 @@ class HomeViewModel(
         }
     }
 
-    private fun loadUserPlaylists(accessToken: String?) {
-        accessToken?.let { token ->
-            viewModelScope.launch {
-                val playlists = fetchUserPlaylists(token)
-                if (playlists != null) {
-                    spotifyPlaylists = playlists
-                    _viewState.update { state ->
-                        state.copy(dialogState = SelectionDialog(
-                            text = R.string.home_selectPlaylists.toText(),
-                            selectionItems = playlists.map {
-                                PlaylistSelectionItem(playlist =  it)
-                            },
-                            action = AddPlaylists(emptyList())
-                        ))
-                    }
+    private fun loadUserPlaylists() {
+        viewModelScope.launch {
+            val token = accessToken() ?: return@launch
+            val playlists = fetchUserPlaylists(token)
+            if (playlists != null) {
+                spotifyPlaylists = playlists
+                _viewState.update { state ->
+                    state.copy(dialogState = SelectionDialog(
+                        text = R.string.home_selectPlaylists.toText(),
+                        selectionItems = playlists.map {
+                            PlaylistSelectionItem(playlist =  it)
+                        },
+                        action = AddPlaylists(emptyList())
+                    ))
                 }
             }
-        } ?: Log.e(LOG_TAG, "No access token found.")
+        }
+    }
+
+    /** Null when there is no usable session, which the user is told about instead of nothing. */
+    private suspend fun accessToken(): String? = try {
+        accessTokenProvider.getAccessToken()
+    } catch (e: SpotifyAuthException) {
+        Log.e(LOG_TAG, "No usable Spotify session", e)
+        sendEvent(R.string.error_spotifySession)
+        null
     }
 
     private suspend fun fetchUserPlaylists(accessToken: String): List<Playlist>? {

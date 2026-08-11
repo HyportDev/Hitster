@@ -14,8 +14,9 @@ class FetchTrackDetailsUseCase(
     private val findYearUseCase: FindEarliestReleaseYearUseCase
 ) {
 
+    /** @throws com.example.hitster.data.SpotifyAuthException when there is no usable session. */
     suspend operator fun invoke(trackUri: String): Song? = withContext(Dispatchers.IO) {
-        val accessToken = accessTokenProvider.getAccessToken() ?: return@withContext null
+        val accessToken = accessTokenProvider.getAccessToken()
 
         val trackId = trackUri.split(":").last()
         val url = "https://api.spotify.com/v1/tracks/$trackId"

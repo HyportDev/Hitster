@@ -12,8 +12,9 @@ class FetchPlaylistTracksUseCase(
     private val accessTokenProvider: AccessTokenProvider
 ) {
 
+    /** @throws com.example.hitster.data.SpotifyAuthException when there is no usable session. */
     suspend operator fun invoke(playlistIds: List<String>): List<String> = withContext(Dispatchers.IO) {
-        val accessToken = accessTokenProvider.getAccessToken() ?: return@withContext emptyList()
+        val accessToken = accessTokenProvider.getAccessToken()
 
         val trackURIs = mutableListOf<String>()
 

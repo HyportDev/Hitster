@@ -1,3 +1,36 @@
+import java.util.Properties
+
+/**
+ * Every developer registers their own Spotify app, because the dashboard ties an app to one package
+ * name and signing fingerprint. The id is not a secret - it ships in the APK either way - it just
+ * differs per person, which is why it is not checked in.
+ */
+val spotifyClientId: String = run {
+    System.getenv("SPOTIFY_CLIENT_ID")?.takeIf { it.isNotBlank() }?.let { return@run it }
+
+    val localProperties = rootProject.file("local.properties")
+    if (localProperties.exists()) {
+        val properties = Properties().apply { localProperties.inputStream().use(::load) }
+        properties.getProperty("spotify.clientId")?.takeIf { it.isNotBlank() }?.let { return@run it }
+    }
+
+    throw GradleException(
+        """
+        Missing Spotify client id.
+
+        Add this line to local.properties (that file is never checked in):
+
+            spotify.clientId=<your client id>
+
+        or set the SPOTIFY_CLIENT_ID environment variable, for example on CI.
+
+        You get an id at https://developer.spotify.com/dashboard by registering an app with
+        package name dev.hyport.hitster, the SHA-1 of your signing certificate, and the
+        redirect URI digital-hitster-app://spotify-callback.
+        """.trimIndent()
+    )
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -6,11 +39,14 @@ plugins {
 }
 
 android {
+    // Namespace and applicationId differ on purpose: the namespace is only the package of the
+    // generated R class and the Kotlin sources, while the applicationId is the identity of the
+    // installed app. Spotify and Play know the latter, so only that one had to leave com.example.
     namespace = "com.example.hitster"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.hitster"
+        applicationId = "dev.hyport.hitster"
         minSdk = 26
         targetSdk = 36
         versionCode = 5
@@ -24,6 +60,8 @@ android {
         )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"$spotifyClientId\"")
     }
 
     buildTypes {
@@ -37,6 +75,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8

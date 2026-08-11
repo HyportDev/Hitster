@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hitster.R
+import com.example.hitster.data.SpotifyAuthException
 import com.example.hitster.game.model.ButtonState
 import com.example.hitster.game.model.GameAction
 import com.example.hitster.game.model.GameAction.AddToken
@@ -36,7 +37,9 @@ import com.example.hitster.game.usecase.FetchPlaylistTracksUseCase
 import com.example.hitster.game.usecase.FetchTrackDetailsUseCase
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import com.spotify.protocol.types.Repeat
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -52,6 +55,11 @@ class GameViewModel(
 
     private var spotifyAppRemote: SpotifyAppRemote? = null
     private val trackURIs = ArrayDeque<String>()
+
+    private val _event = MutableSharedFlow<Int>()
+
+    /** String resources for problems the player has to know about, shown as a snackbar. */
+    val event = _event.asSharedFlow()
 
     private val _uiState = MutableStateFlow(
         GameUiState(
@@ -437,8 +445,12 @@ class GameViewModel(
 
     private fun fetchTracksFromPlaylists(playlistIds: List<String>) {
         viewModelScope.launch {
-            val tracks = fetchPlaylistTracksUseCase(playlistIds)
-            addSongs(uris = tracks)
+            try {
+                val tracks = fetchPlaylistTracksUseCase(playlistIds)
+                addSongs(uris = tracks)
+            } catch (e: SpotifyAuthException) {
+                reportSpotifySessionLost(e)
+            }
         }
     }
 
@@ -448,10 +460,18 @@ class GameViewModel(
                 fetchTrackDetailsUseCase(uri)?.let { song ->
                     setCurrentSong(song)
                 }
+            } catch (e: SpotifyAuthException) {
+                // Without a session the round cannot continue, so it must not fail silently.
+                reportSpotifySessionLost(e)
             } catch (_: Exception) {
                 Log.e(LOG_TAG, "Error fetching track details")
             }
         }
+    }
+
+    private suspend fun reportSpotifySessionLost(cause: SpotifyAuthException) {
+        Log.e(LOG_TAG, "No usable Spotify session", cause)
+        _event.emit(R.string.error_spotifySession)
     }
 
     private fun setCurrentSong(song: Song) {

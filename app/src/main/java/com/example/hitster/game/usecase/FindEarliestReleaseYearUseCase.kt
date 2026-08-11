@@ -13,8 +13,9 @@ class FindEarliestReleaseYearUseCase(
     private val accessTokenProvider: AccessTokenProvider
 ) {
 
+    /** @throws com.example.hitster.data.SpotifyAuthException when there is no usable session. */
     suspend operator fun invoke(songName: String, artistName: String): Int? = withContext(Dispatchers.IO) {
-        val accessToken = accessTokenProvider.getAccessToken() ?: return@withContext null
+        val accessToken = accessTokenProvider.getAccessToken()
 
         val query = buildString {
             append(URLEncoder.encode(songName, "UTF-8"))

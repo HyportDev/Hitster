@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -61,15 +64,28 @@ import com.example.hitster.game.model.UnknownSong
 import com.example.hitster.game.ui.SongCardValidation.Companion.toSongCardValidation
 import com.example.hitster.res.toText
 import com.example.hitster.ui.Button
+import com.example.hitster.ui.ErrorSnackbar
 import com.example.hitster.ui.HitsterTheme
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlin.math.roundToInt
 
 @Composable
-internal fun GameScreen(state: GameUiState, onAction: (GameAction) -> Unit) {
+internal fun GameScreen(
+    state: GameUiState,
+    event: SharedFlow<Int>,
+    onAction: (GameAction) -> Unit
+) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val dragState = remember { TokenDragState() }
     var screenPositionInRoot by remember { mutableStateOf(Offset.Zero) }
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(event) {
+        event.collect { snackbarHostState.showSnackbar(message = context.getString(it)) }
+    }
 
     Box(
         modifier = Modifier
@@ -149,6 +165,11 @@ internal fun GameScreen(state: GameUiState, onAction: (GameAction) -> Unit) {
         }
 
         DraggedToken(dragState = dragState, screenPositionInRoot = screenPositionInRoot)
+
+        SnackbarHost(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            hostState = snackbarHostState
+        ) { ErrorSnackbar(it) }
     }
 }
 
@@ -437,6 +458,6 @@ fun GameScreenPreview() {
             ),
             phase = GamePhase.TOKEN_PLACEMENT,
             tokenBets = listOf(TokenBet(playerName = "Lily", gapIndex = 0))
-        ), {})
+        ), MutableSharedFlow(), {})
     }
 }

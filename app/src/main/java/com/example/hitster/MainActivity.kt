@@ -1,12 +1,15 @@
 package com.example.hitster
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
@@ -27,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.hitster.data.AccessTokenProvider
+import com.example.hitster.data.SpotifyConfig
 import com.example.hitster.game.GameViewModel
 import com.example.hitster.game.Routes.Game
 import com.example.hitster.game.Routes.Home
@@ -47,8 +51,15 @@ class MainActivity : ComponentActivity() {
     private val accessTokenProvider: AccessTokenProvider by inject()
     private val mainViewModel: MainViewModel by inject()
 
+    private val spotifyConfig = SpotifyConfig.Default
+
+    private val loginLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result -> onLoginResult(result) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        authorizeIfNeeded()
         // The app is dark regardless of the system setting, so the bar icons have to stay light.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
@@ -63,9 +74,6 @@ class MainActivity : ComponentActivity() {
     private fun App() {
         val navController = rememberNavController()
         HitsterTheme {
-            LaunchedEffect(Unit) {
-                auth()
-            }
             Surface(color = MaterialTheme.colorScheme.background) {
                 NavHost(
                     navController = navController,
@@ -104,7 +112,10 @@ class MainActivity : ComponentActivity() {
                             parametersOf(args.playerNames, args.playlists)
                         }
                         LaunchedEffect(backStackEntry) {
-                            viewModel.initSpotifyConnection(CLIENT_ID, REDIRECT_URI)
+                            viewModel.initSpotifyConnection(
+                                spotifyConfig.clientId,
+                                spotifyConfig.redirectUri
+                            )
                         }
                         DisposableEffect(backStackEntry) {
                             onDispose { viewModel.closeSpotifyConnection() }
@@ -112,6 +123,7 @@ class MainActivity : ComponentActivity() {
                         val state by viewModel.uiState.collectAsStateWithLifecycle()
                         GameScreen(
                             state = state,
+                            event = viewModel.event,
                             onAction = viewModel::onAction
                         )
                     }
@@ -120,49 +132,49 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun auth() {
-        val scopes = arrayOf(
-            "streaming",
-            "user-read-private",
-            "playlist-read-private",
-            "playlist-read-collaborative",
-            "user-library-read",
-            //"user-read-email"
-        )
-
-        val builder: AuthorizationRequest.Builder = AuthorizationRequest.Builder(
-            CLIENT_ID,
-            AuthorizationResponse.Type.TOKEN,
-            REDIRECT_URI
-        )
-
-        builder.setScopes(scopes)
-        builder.setShowDialog(true)
-        val request: AuthorizationRequest = builder.build()
-        AuthorizationClient.openLoginActivity(this, REQUEST_CODE, request)
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQUEST_CODE) {
-            val response: AuthorizationResponse = AuthorizationClient.getResponse(resultCode, data)
-
-            if (response.type == AuthorizationResponse.Type.TOKEN) {
-                accessTokenProvider.setAccessToken(response.accessToken)
-                mainViewModel.setSpotifyState(true)
-                Log.d("MainActivity", "Access token retrieved!")
-            } else if (response.type == AuthorizationResponse.Type.ERROR) {
-                mainViewModel.setSpotifyState(false)
-                Log.d("MainActivity", "Error during authorization: ${response.error}")
-            }
+    /**
+     * Only asks for a login when the stored session is gone or has run out, so a restart within
+     * the hour goes straight into the app.
+     */
+    private fun authorizeIfNeeded() {
+        lifecycleScope.launch {
+            if (accessTokenProvider.needsAuthorization()) startLogin()
         }
     }
 
-    companion object {
-        private const val CLIENT_ID = "41a8741aa1774af5ab5ec8973bcf1a39"
-        private const val REDIRECT_URI = "digital-hitster-app://spotify-callback"
-        private const val REQUEST_CODE = 1337
+    /**
+     * The implicit grant is what the app to app login supports: the Spotify app receives the
+     * request as intent extras, and those carry no room for the PKCE challenge a code exchange
+     * would need.
+     */
+    private fun startLogin() {
+        val request = AuthorizationRequest.Builder(
+            spotifyConfig.clientId,
+            AuthorizationResponse.Type.TOKEN,
+            spotifyConfig.redirectUri
+        )
+            .setScopes(spotifyConfig.scopes.toTypedArray())
+            .setShowDialog(true)
+            .build()
+
+        loginLauncher.launch(AuthorizationClient.createLoginActivityIntent(this, request))
+    }
+
+    private fun onLoginResult(result: ActivityResult) {
+        val response = AuthorizationClient.getResponse(result.resultCode, result.data)
+        when (response.type) {
+            AuthorizationResponse.Type.TOKEN -> lifecycleScope.launch {
+                accessTokenProvider.setSession(response.accessToken, response.expiresIn)
+            }
+
+            AuthorizationResponse.Type.ERROR ->
+                Log.e(LOG_TAG, "Spotify refused the login: ${response.error}")
+
+            else -> Log.d(LOG_TAG, "Login ended without a token (${response.type})")
+        }
+    }
+
+    private companion object {
+        const val LOG_TAG = "MainActivity"
     }
 }
