@@ -31,4 +31,16 @@
     <string name="game_tokenWinner">%1$s bet on the right gap and wins the card!</string>
     <string name="game_tokenRefunded">Also correct – token returned to %1$s</string>
     <string name="game_tokenOfPlayer">Token of %1$s</string>
+
+    <string name="game_turnOf">%1$s is up</string>
+    <string name="game_playerTurn">playing</string>
+    <string name="game_playerTokens">%1$s, %2$d tokens</string>
+    <string name="game_timelineOf">%1$s · %2$d cards</string>
+    <string name="game_phaseLoading">Loading the song…</string>
+    <string name="game_phaseGuess">Slot the card into the timeline</string>
+    <string name="game_phaseTokens">The others may bet a token</string>
+    <string name="game_phaseCorrect">Spot on!</string>
+    <string name="game_phaseWrong">Not this time</string>
+    <string name="game_moveLeft">Move the card left</string>
+    <string name="game_moveRight">Move the card right</string>
 </resources>

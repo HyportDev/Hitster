@@ -39,7 +39,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.hitster.R
@@ -80,6 +80,7 @@ internal fun GameScreen(state: GameUiState, onAction: (GameAction) -> Unit) {
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val currentPlayer = state.players.find { it.isCurrentPlayer }
             if (isLandscape) {
                 Column(modifier = Modifier.weight(1f)
                     .fillMaxWidth()
@@ -100,6 +101,16 @@ internal fun GameScreen(state: GameUiState, onAction: (GameAction) -> Unit) {
                             playerList(state.players, onAction)
                         }
                     }
+                    currentPlayer?.let {
+                        RoundHeader(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            currentPlayerName = it.name,
+                            phase = state.phase,
+                            isSongLoaded = state.currentSong != null,
+                            wasGuessCorrect = state.wasGuessCorrect,
+                            compact = true
+                        )
+                    }
                     TimelineSection(state, dragState, onAction)
                 }
             } else {
@@ -107,8 +118,18 @@ internal fun GameScreen(state: GameUiState, onAction: (GameAction) -> Unit) {
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                 ) {
+                    currentPlayer?.let {
+                        RoundHeader(
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
+                            currentPlayerName = it.name,
+                            phase = state.phase,
+                            isSongLoaded = state.currentSong != null,
+                            wasGuessCorrect = state.wasGuessCorrect
+                        )
+                    }
                     LazyRow(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         playerList(state.players, onAction)
@@ -165,6 +186,7 @@ private fun TimelineSection(
     Column {
         SongRow(
             songItems = selectedPlayer.songs,
+            timelineOwnerName = selectedPlayer.name,
             primaryButton = state.primaryButton,
             phase = state.phase,
             isSongLoaded = state.currentSong != null,
@@ -196,7 +218,7 @@ private fun TimelineSection(
             Text(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 text = stringResource(R.string.game_tokenWinner, state.tokenWinnerName.orEmpty()),
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.titleSmall,
                 color = SongCardValidation.VALID.color
             )
         }
@@ -210,8 +232,8 @@ private fun TimelineSection(
                     R.string.game_tokenRefunded,
                     state.refundedTokenPlayerNames.joinToString()
                 ),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.secondary
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.tertiary
             )
         }
 
@@ -243,13 +265,14 @@ private fun TokenBettingSection(
             text = stringResource(
                 if (players.isEmpty()) R.string.game_tokenAllBetsPlaced else R.string.game_tokenHint
             ),
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.secondary
         )
         if (hasPlacedTokens) {
             Text(
                 text = stringResource(R.string.game_tokenTakeBackHint),
-                color = MaterialTheme.colorScheme.secondary
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         FlowRow(
@@ -273,6 +296,7 @@ private fun LazyListScope.playerList(playerItems: List<Player>, onAction: (GameA
             modifier = Modifier.animateItem(),
             playerName = it.name,
             isSelected = it.isSelected,
+            isCurrentPlayer = it.isCurrentPlayer,
             tokens = it.tokens,
             onClick = { onAction(GameAction.OnPlayerClick(it)) }
         )
@@ -282,6 +306,7 @@ private fun LazyListScope.playerList(playerItems: List<Player>, onAction: (GameA
 @Composable
 private fun SongRow(
     songItems: List<SongItem>,
+    timelineOwnerName: String,
     primaryButton: ButtonState,
     phase: GamePhase,
     isSongLoaded: Boolean,
@@ -305,13 +330,16 @@ private fun SongRow(
         )
     }
     Column {
+        // Names the owner, because the timeline on screen is not necessarily the current player's.
         Text(
-            modifier = Modifier.padding(top = 16.dp, start = 16.dp),
-            text = "Songs: " + songItems
-                .filter { it is Song && it.correctLocation != false }
-                .size,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.secondary
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+            text = stringResource(
+                R.string.game_timelineOf,
+                timelineOwnerName,
+                songItems.count { it is Song && it.correctLocation != false }
+            ),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         LazyRow(
             modifier = Modifier.fillMaxWidth().heightIn(50.dp, 200.dp),
@@ -339,7 +367,7 @@ private fun SongRow(
                                 artist = songItem.artist.getString(),
                                 year = songItem.releaseYear.toString(),
                                 validation = songItem.correctLocation.toSongCardValidation(),
-                                color = songItem.color ?: Color(0xffcfd8dc)
+                                color = songItem.color ?: DefaultSongCardColor
                             )
 
                         is UnknownSong -> {
@@ -375,7 +403,7 @@ private fun SongRow(
     }
 }
 
-@PreviewLightDark
+@Preview
 @Composable
 fun GameScreenPreview() {
     HitsterTheme {

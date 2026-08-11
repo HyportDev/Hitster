@@ -175,7 +175,8 @@ class GameViewModel(
                 phase = GamePhase.GUESSING,
                 tokenBets = emptyList(),
                 tokenWinnerName = null,
-                refundedTokenPlayerNames = emptyList()
+                refundedTokenPlayerNames = emptyList(),
+                wasGuessCorrect = null
             ).updatePrimaryButtonVisibility()
         }
     }
@@ -424,6 +425,7 @@ class GameViewModel(
                 tokenBets = tokenBets,
                 tokenWinnerName = tokenWinnerName,
                 refundedTokenPlayerNames = refundedTokenPlayerNames,
+                wasGuessCorrect = guessedCorrectLocation,
                 primaryButton = ButtonState(
                     title = R.string.game_buttonNext,
                     action = NextPlayer
@@ -456,12 +458,15 @@ class GameViewModel(
         _uiState.update { it.copy(currentSong = song).updatePrimaryButtonVisibility() }
     }
 
-    private fun generateColor() : Color {
-        val red = Random.nextInt(200, 256)
-        val green = Random.nextInt(200, 256)
-        val blue = Random.nextInt(200, 256)
-        return Color(red, green, blue)
-    }
+    /**
+     * A random but saturated card color. Lightness stays high enough for the black card text and
+     * low enough to not wash out against the dark background.
+     */
+    private fun generateColor() : Color = Color.hsl(
+        hue = Random.nextInt(0, 360).toFloat(),
+        saturation = 0.62f,
+        lightness = 0.72f
+    )
 
     companion object {
         private const val LOG_TAG = "GameViewModel"

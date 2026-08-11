@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Card
@@ -24,7 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,6 +32,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.hitster.ui.HitsterTheme
+import com.example.hitster.ui.SongYearStyle
+
+/** Used by cards that never got a random color, i.e. the starting card of a timeline. */
+internal val DefaultSongCardColor = Color(0xFFE3DDEA)
 
 @Composable
 internal fun SongCard(
@@ -48,8 +53,9 @@ internal fun SongCard(
 
     Card(
         modifier = modifier.aspectRatio(1f),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors().copy(containerColor = color),
-        border = validation?.let { BorderStroke(2.dp, validation.color) }
+        border = validation?.let { BorderStroke(3.dp, validation.color) }
     ) {
         Column(
             modifier = newModifier.fillMaxSize().padding(vertical = 16.dp, horizontal = 8.dp),
@@ -68,11 +74,7 @@ internal fun SongCard(
             BasicText(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                 text = year,
-                style = TextStyle(
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                ),
+                style = SongYearStyle.copy(textAlign = TextAlign.Center),
                 autoSize = TextAutoSize.StepBased(),
                 maxLines = 1,
                 softWrap = true,
@@ -93,8 +95,8 @@ internal fun SongCard(
 }
 
 enum class SongCardValidation(val color: Color) {
-    VALID(Color(0xff4caf50)),
-    INVALID(Color(0xffd32f2f));
+    VALID(Color(0xFF4ADE80)),
+    INVALID(Color(0xFFFF5A5A));
 
     companion object {
         fun Boolean?.toSongCardValidation() =
@@ -139,12 +141,12 @@ private fun radiantShimmer(color: Color): Brush {
 @Preview
 @Composable
 fun SongCardPreview() {
-    MaterialTheme {
+    HitsterTheme {
         SongCard(
             title = "Alles nur geklaut",
             artist = "Die Prinzen",
             year = "1993",
-            color = Color(0xffcfd8dc)
+            color = DefaultSongCardColor
         )
     }
 }
