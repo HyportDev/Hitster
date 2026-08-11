@@ -37,8 +37,8 @@
     <string name="game_phaseLoading">Song wird geladen…</string>
     <string name="game_phaseGuess">Karte in die Zeitleiste einsortieren</string>
     <string name="game_phaseTokens">Die anderen dürfen einen Token setzen</string>
-    <string name="game_phaseCorrect">Sitzt!</string>
-    <string name="game_phaseWrong">Diesmal nicht</string>
+    <string name="game_phaseCorrect">Karte richtig einsortiert</string>
+    <string name="game_phaseWrong">Karte falsch einsortiert</string>
     <string name="game_moveLeft">Karte nach links schieben</string>
     <string name="game_moveRight">Karte nach rechts schieben</string>
 </resources>

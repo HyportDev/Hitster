@@ -39,8 +39,8 @@
     <string name="game_phaseLoading">Loading the song…</string>
     <string name="game_phaseGuess">Slot the card into the timeline</string>
     <string name="game_phaseTokens">The others may bet a token</string>
-    <string name="game_phaseCorrect">Spot on!</string>
-    <string name="game_phaseWrong">Not this time</string>
+    <string name="game_phaseCorrect">Card placed correctly</string>
+    <string name="game_phaseWrong">Card placed incorrectly</string>
     <string name="game_moveLeft">Move the card left</string>
     <string name="game_moveRight">Move the card right</string>
 </resources>

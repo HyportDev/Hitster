@@ -86,16 +86,20 @@ internal fun GameScreen(state: GameUiState, onAction: (GameAction) -> Unit) {
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                 ) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         MusicButtonSection(
-                            modifier = Modifier.padding(horizontal = 16.dp),
+                            modifier = Modifier.padding(start = 8.dp),
                             musicButton = state.musicButton,
                             primaryAction = state.primaryButton.action,
                             onAction = onAction,
                             height = 50.dp
                         )
                         LazyRow(
-                            modifier = Modifier.padding(start = 100.dp, end = 16.dp),
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             playerList(state.players, onAction)
