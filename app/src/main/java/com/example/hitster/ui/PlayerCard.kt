@@ -1,9 +1,11 @@
 package com.example.hitster.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
@@ -19,27 +21,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.hitster.R
 
+/** The player chip on the home screen. Tokens only exist in a running game, see game.ui.PlayerCard. */
 @Composable
 fun PlayerCard(
     modifier: Modifier = Modifier,
     playerName: String,
-    onClick: () -> Unit,
-    selected: Boolean = false
+    onClick: () -> Unit
 ) {
-    PlayerCardContent(modifier = modifier, selected = selected, onClick = onClick) {
+    PlayerCardContent(modifier = modifier, onClick = onClick) {
         Text(
             text = playerName,
-            color = if (selected) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.colorScheme.onPrimaryContainer
-            }
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
 }
@@ -84,17 +85,15 @@ fun InputPlayerCard(
 private fun PlayerCardContent(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
-    selected: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
     Card(
         modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.elevatedCardElevation(),
-        colors = if (selected) {
-            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
-        } else {
-            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-        },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
         onClick = onClick
     ) {
         Row(
@@ -104,11 +103,7 @@ private fun PlayerCardContent(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_player),
-                tint = if (selected) {
-                    MaterialTheme.colorScheme.onPrimary
-                } else {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                },
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 contentDescription = null
             )
             content(this)

@@ -1,4 +1,4 @@
-package com.example.hitster.home.view
+package com.example.hitster.home.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
@@ -52,9 +52,9 @@ import com.example.hitster.home.model.HomeViewState
 import com.example.hitster.home.model.PlaylistViewState
 import com.example.hitster.home.model.SpotifyItem
 import com.example.hitster.home.model.SpotifyLoading
-import com.example.hitster.home.view.dialog.AddPlaylistDialog
-import com.example.hitster.home.view.dialog.DeleteDialogView
-import com.example.hitster.home.view.dialog.SelectionDialogView
+import com.example.hitster.home.ui.dialog.AddPlaylistDialog
+import com.example.hitster.home.ui.dialog.DeleteDialogView
+import com.example.hitster.home.ui.dialog.SelectionDialogView
 import com.example.hitster.ui.Button
 import com.example.hitster.ui.ErrorSnackbar
 import com.example.hitster.ui.HitsterTheme
@@ -166,7 +166,7 @@ private fun PlayerBox(
         FlowRow(
             modifier = Modifier,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
         ) {
             for (player in players) {
                 PlayerCard(playerName = player, onClick = { onAction(OpenRemovePlayerDialog(player)) })

@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "com.example.hitster"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.hitster"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 4
-        versionName = "2.2.0"
+        targetSdk = 36
+        versionCode = 5
+        versionName = "2.3.0"
 
         manifestPlaceholders.putAll(
             mapOf(
@@ -45,7 +45,6 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-
 }
 
 tasks.withType<Test>().configureEach {
@@ -53,7 +52,6 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -78,10 +76,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
 
     // Testing
-    testImplementation("app.cash.turbine:turbine:1.2.0")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.8.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(kotlin("test"))
 }

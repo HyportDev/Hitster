@@ -1,5 +1,6 @@
 package com.example.hitster.game.usecase
 
+import android.util.Log
 import com.example.hitster.data.AccessTokenProvider
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +35,7 @@ class FindEarliestReleaseYearUseCase(
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) return@withContext null
 
-            val body = response.body?.string() ?: return@withContext null
+            val body = response.body.string()
             val json = JsonParser.parseString(body).asJsonObject
             val tracks = json.getAsJsonObject("tracks").getAsJsonArray("items")
 
@@ -48,6 +49,7 @@ class FindEarliestReleaseYearUseCase(
             }.minOrNull()
 
         } catch (e: Exception) {
+            Log.e(javaClass.name, "Error fetching track details", e)
             null
         }
     }

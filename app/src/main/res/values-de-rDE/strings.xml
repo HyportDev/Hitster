@@ -20,4 +20,25 @@
     <string name="home_spotifyLoading">Lädt</string>
     <string name="home_spotifyDisconnected">Verbindung getrennt</string>
     <string name="home_invalidLink">Ungültiger Playlist-Link. Versuche es erneut.</string>
+    <string name="game_add_token">Titel und Interpreten geraten</string>
+    <string name="game_buttonReveal">Song auflösen</string>
+    <string name="game_tokenHint">Zieh einen Token in eine freie Lücke, um gegen den aktiven Spieler zu wetten</string>
+    <string name="game_tokenAllBetsPlaced">Alle Tokens sind gesetzt</string>
+    <string name="game_tokenTakeBackHint">Tippe auf ein gesetztes Token, um es zurückzunehmen</string>
+    <string name="game_tokenTakeBack">Token von %1$s zurücknehmen</string>
+    <string name="game_tokenWinner">%1$s hat die richtige Lücke getroffen und bekommt die Karte!</string>
+    <string name="game_tokenRefunded">Ebenfalls richtig – Token zurück an %1$s</string>
+    <string name="game_tokenOfPlayer">Token von %1$s</string>
+
+    <string name="game_turnOf">%1$s ist dran</string>
+    <string name="game_playerTurn">am Zug</string>
+    <string name="game_playerTokens">%1$s, %2$d Tokens</string>
+    <string name="game_timelineOf">%1$s · %2$d Karten</string>
+    <string name="game_phaseLoading">Song wird geladen…</string>
+    <string name="game_phaseGuess">Karte in die Zeitleiste einsortieren</string>
+    <string name="game_phaseTokens">Die anderen dürfen einen Token setzen</string>
+    <string name="game_phaseCorrect">Karte richtig einsortiert</string>
+    <string name="game_phaseWrong">Karte falsch einsortiert</string>
+    <string name="game_moveLeft">Karte nach links schieben</string>
+    <string name="game_moveRight">Karte nach rechts schieben</string>
 </resources>

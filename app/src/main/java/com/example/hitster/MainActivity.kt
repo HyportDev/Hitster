@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -18,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -28,10 +30,10 @@ import com.example.hitster.data.AccessTokenProvider
 import com.example.hitster.game.GameViewModel
 import com.example.hitster.game.Routes.Game
 import com.example.hitster.game.Routes.Home
-import com.example.hitster.game.view.GameScreen
+import com.example.hitster.game.ui.GameScreen
 import com.example.hitster.home.HomeViewModel
 import com.example.hitster.home.model.PlaylistViewState
-import com.example.hitster.home.view.HomeScreen
+import com.example.hitster.home.ui.HomeScreen
 import com.example.hitster.ui.HitsterTheme
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
@@ -47,7 +49,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // The app is dark regardless of the system setting, so the bar icons have to stay light.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
         setContent {
             App()
         }
@@ -68,9 +74,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     composable<Home> {
                         val viewModel: HomeViewModel = koinViewModel()
-                        val state = viewModel.viewState.collectAsStateWithLifecycle().value
-                        val spotifyState = mainViewModel.spotifyState
-                            .collectAsStateWithLifecycle().value
+                        val state by viewModel.viewState.collectAsStateWithLifecycle()
+                        val spotifyState by mainViewModel.spotifyState.collectAsStateWithLifecycle()
                         HomeScreen(
                             state = state,
                             spotifyState = spotifyState,
@@ -104,7 +109,7 @@ class MainActivity : ComponentActivity() {
                         DisposableEffect(backStackEntry) {
                             onDispose { viewModel.closeSpotifyConnection() }
                         }
-                        val state = viewModel.viewState.collectAsStateWithLifecycle().value
+                        val state by viewModel.uiState.collectAsStateWithLifecycle()
                         GameScreen(
                             state = state,
                             onAction = viewModel::onAction

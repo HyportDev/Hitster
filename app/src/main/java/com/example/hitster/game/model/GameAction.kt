@@ -6,6 +6,10 @@ sealed interface GameAction {
     data object MoveLeft : GameAction
     data object MoveRight : GameAction
     data object Guess : GameAction
+    data object Reveal : GameAction
     data object NextPlayer : GameAction
-    data class OnSelectPlayer(val playerItem: PlayerItem) : GameAction
+    data class AddToken(val player: Player) : GameAction
+    data class PlaceToken(val playerName: String, val gapIndex: Int) : GameAction
+    data class TakeBackToken(val gapIndex: Int) : GameAction
+    data class OnPlayerClick(val player: Player) : GameAction
 }
