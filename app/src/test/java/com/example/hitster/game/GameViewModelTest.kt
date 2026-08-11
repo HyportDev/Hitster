@@ -1,5 +1,6 @@
-package com.example.hitster.game
+﻿package com.example.hitster.game
 
+import android.content.Context
 import android.util.Log
 import app.cash.turbine.test
 import com.example.hitster.game.model.GameAction
@@ -50,6 +51,9 @@ class GameViewModelTest {
     private val spotifyAppRemote: SpotifyAppRemote = mockk(relaxed = true)
     private val playerApi: PlayerApi = mockk(relaxed = true)
 
+    /** Stands in for the activity the connection needs, see ConnectToSpotifyUseCase. */
+    private val context: Context = mockk(relaxed = true)
+
     @BeforeEach
     fun setup() {
         Dispatchers.setMain(testDispatcher)
@@ -61,7 +65,7 @@ class GameViewModelTest {
 
         // Spotify Mocks vorbereiten
         every { spotifyAppRemote.playerApi } returns playerApi
-        coEvery { connectToSpotifyUseCase(any(), any()) } returns Result.success(spotifyAppRemote)
+        coEvery { connectToSpotifyUseCase(any(), any(), any()) } returns Result.success(spotifyAppRemote)
 
         // Standard-Verhalten für UseCases
         coEvery { fetchPlaylistTracksUseCase(any()) } returns listOf("spotify:track:1", "spotify:track:2")
@@ -93,17 +97,17 @@ class GameViewModelTest {
     fun `initSpotifyConnection updates remote and sets repeat mode`() = runTest {
         val viewModel = createViewModel(listOf("Alice"))
 
-        viewModel.initSpotifyConnection("client", "uri")
+        viewModel.initSpotifyConnection(context, "client", "uri")
         advanceUntilIdle()
 
-        coVerify { connectToSpotifyUseCase("client", "uri") }
+        coVerify { connectToSpotifyUseCase(context, "client", "uri") }
         verify { playerApi.setRepeat(any()) }
     }
 
     @Test
     fun `onPauseClick calls spotify pause and updates state`() = runTest {
         val viewModel = createViewModel(listOf("Alice"))
-        viewModel.initSpotifyConnection("client", "uri")
+        viewModel.initSpotifyConnection(context, "client", "uri")
         advanceUntilIdle()
 
         viewModel.onAction(GameAction.OnPauseClick)
@@ -129,6 +133,44 @@ class GameViewModelTest {
             val state = awaitItem()
             assertEquals(initialTokens + 1, state.players.first().tokens)
         }
+    }
+
+    @Test
+    fun `a track that arrived before the connection starts once it is there`() = runTest {
+        // The playlist wins the race against the app remote, which is what happens now that a
+        // stored session skips the login on start up.
+        val viewModel = createViewModel(listOf("Alice"))
+        advanceUntilIdle()
+        verify(exactly = 0) { playerApi.play(any<String>()) }
+        // Nothing is playing, so the button must not claim otherwise.
+        assertEquals(MusicButtonItem.PLAY, viewModel.uiState.value.musicButton)
+
+        viewModel.initSpotifyConnection(context, "client", "uri")
+        advanceUntilIdle()
+
+        // The playlist is shuffled, so only the fact that exactly one track started matters.
+        verify(exactly = 1) { playerApi.play(any<String>()) }
+        assertEquals(MusicButtonItem.PAUSE, viewModel.uiState.value.musicButton)
+    }
+
+    @Test
+    fun `a track is not started twice when the connection was already there`() = runTest {
+        val viewModel = createViewModel(listOf("Alice"))
+        viewModel.initSpotifyConnection(context, "client", "uri")
+        advanceUntilIdle()
+
+        verify(exactly = 1) { playerApi.play(any<String>()) }
+    }
+
+    @Test
+    fun `the play button stays honest while nothing is connected`() = runTest {
+        val viewModel = createViewModel(listOf("Alice"))
+        advanceUntilIdle()
+
+        viewModel.onAction(GameAction.OnPlayClick)
+
+        assertEquals(MusicButtonItem.PLAY, viewModel.uiState.value.musicButton)
+        verify(exactly = 0) { playerApi.resume() }
     }
 
     @Test
@@ -426,3 +468,4 @@ class GameViewModelTest {
         return viewModel
     }
 }
+

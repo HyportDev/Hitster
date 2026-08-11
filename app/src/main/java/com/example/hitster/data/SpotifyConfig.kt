@@ -20,6 +20,9 @@ data class SpotifyConfig(
             clientId = BuildConfig.SPOTIFY_CLIENT_ID,
             redirectUri = "digital-hitster-app://spotify-callback",
             scopes = listOf(
+                // Required by the App Remote SDK. Without it the service binds, but Spotify never
+                // answers the handshake and the connection hangs without an error.
+                "app-remote-control",
                 "streaming",
                 "user-read-private",
                 "playlist-read-private",

@@ -1,5 +1,6 @@
 package com.example.hitster.game
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
@@ -35,6 +36,7 @@ import com.example.hitster.game.model.moveSongItemRight
 import com.example.hitster.game.usecase.ConnectToSpotifyUseCase
 import com.example.hitster.game.usecase.FetchPlaylistTracksUseCase
 import com.example.hitster.game.usecase.FetchTrackDetailsUseCase
+import com.example.hitster.res.Text
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import com.spotify.protocol.types.Repeat
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -56,9 +58,12 @@ class GameViewModel(
     private var spotifyAppRemote: SpotifyAppRemote? = null
     private val trackURIs = ArrayDeque<String>()
 
-    private val _event = MutableSharedFlow<Int>()
+    /** The track of the current round, kept so it can start late if the connection was not ready. */
+    private var currentTrackUri: String? = null
 
-    /** String resources for problems the player has to know about, shown as a snackbar. */
+    private val _event = MutableSharedFlow<Text>()
+
+    /** Problems the player has to know about, shown as a snackbar. */
     val event = _event.asSharedFlow()
 
     private val _uiState = MutableStateFlow(
@@ -77,15 +82,20 @@ class GameViewModel(
         switchToNextPlayer()
     }
 
-    fun initSpotifyConnection(clientId: String, redirectUri: String) {
+    /** [context] has to be the activity, see [ConnectToSpotifyUseCase]. It is not kept around. */
+    fun initSpotifyConnection(context: Context, clientId: String, redirectUri: String) {
         viewModelScope.launch {
-            val result = connectToSpotifyUseCase(clientId, redirectUri)
-            if (result.isSuccess){
-                val appRemote = result.getOrThrow()
-                setSpotifyAppRemote(appRemote)
-            } else {
-                Log.e("Spotify", "Failed to connect", result.exceptionOrNull())
-            }
+            val result = connectToSpotifyUseCase(context, clientId, redirectUri)
+            result.fold(
+                onSuccess = { setSpotifyAppRemote(it) },
+                onFailure = { cause ->
+                    // Silence here used to look exactly like a game that simply plays no music.
+                    Log.e(LOG_TAG, "Failed to connect to the Spotify app", cause)
+                    _event.emit(
+                        Text.Resource(R.string.error_spotifyConnection, cause.readableMessage())
+                    )
+                }
+            )
         }
     }
 
@@ -93,11 +103,16 @@ class GameViewModel(
         spotifyAppRemote?.let {
             SpotifyAppRemote.disconnect(it)
         }
+        // Otherwise a disconnected remote stays behind and swallows every command after a rotation.
+        spotifyAppRemote = null
     }
 
     private fun setSpotifyAppRemote(spotifyAppRemote: SpotifyAppRemote) {
         this.spotifyAppRemote = spotifyAppRemote
         spotifyAppRemote.playerApi.setRepeat(Repeat.ONE)
+        // The playlist can arrive before the connection does, which would leave the round sitting
+        // on a track that was never started.
+        startCurrentTrack()
     }
 
     fun onAction(action: GameAction) {
@@ -138,11 +153,37 @@ class GameViewModel(
     }
 
     private fun nextSong() {
-        trackURIs.removeFirstOrNull()?.let { uri ->
-            spotifyAppRemote?.playerApi?.play(uri)
-            _uiState.update { it.copy(musicButton = MusicButtonItem.PAUSE) }
-            loadTrack(uri)
-        } ?:  Log.e(LOG_TAG, "Playlist has no items left.")
+        val uri = trackURIs.removeFirstOrNull()
+        if (uri == null) {
+            Log.e(LOG_TAG, "Playlist has no items left.")
+            return
+        }
+        currentTrackUri = uri
+        startCurrentTrack()
+        loadTrack(uri)
+    }
+
+    /**
+     * Starts the track this round is on. Does nothing while the app remote is still connecting;
+     * [setSpotifyAppRemote] starts it as soon as the connection is there.
+     */
+    private fun startCurrentTrack() {
+        val playerApi = spotifyAppRemote?.playerApi ?: return
+        val uri = currentTrackUri ?: return
+        playerApi.play(uri).setErrorCallback { reportPlaybackFailure(it) }
+        _uiState.update { it.copy(musicButton = MusicButtonItem.PAUSE) }
+    }
+
+    /**
+     * Spotify answers a rejected command through this callback and nowhere else. Without it a
+     * refusal - no premium, track unavailable, app not allowed - is completely invisible.
+     */
+    private fun reportPlaybackFailure(cause: Throwable) {
+        Log.e(LOG_TAG, "Spotify refused to play", cause)
+        _uiState.update { it.copy(musicButton = MusicButtonItem.PLAY) }
+        viewModelScope.launch {
+            _event.emit(Text.Resource(R.string.error_spotifyPlayback, cause.readableMessage()))
+        }
     }
 
     private fun nextPlayer() {
@@ -215,13 +256,17 @@ class GameViewModel(
         }
     }
 
+    // Both only flip the button once the remote actually took the command, so it stops claiming
+    // that music is playing while nothing is connected.
     private fun playMusic() {
-        spotifyAppRemote?.playerApi?.resume()
+        val playerApi = spotifyAppRemote?.playerApi ?: return
+        playerApi.resume().setErrorCallback { reportPlaybackFailure(it) }
         _uiState.update { it.copy(musicButton = MusicButtonItem.PAUSE) }
     }
 
     private fun pauseMusic() {
-        spotifyAppRemote?.playerApi?.pause()
+        val playerApi = spotifyAppRemote?.playerApi ?: return
+        playerApi.pause().setErrorCallback { reportPlaybackFailure(it) }
         _uiState.update { it.copy(musicButton = MusicButtonItem.PLAY) }
     }
 
@@ -447,6 +492,13 @@ class GameViewModel(
         viewModelScope.launch {
             try {
                 val tracks = fetchPlaylistTracksUseCase(playlistIds)
+                if (tracks.isEmpty()) {
+                    // The use case logs the HTTP status and returns what it has, so an empty list
+                    // is the only sign the player gets that the playlists were refused.
+                    Log.e(LOG_TAG, "The playlists returned no tracks")
+                    _event.emit(Text.Resource(R.string.error_spotifyNoTracks))
+                    return@launch
+                }
                 addSongs(uris = tracks)
             } catch (e: SpotifyAuthException) {
                 reportSpotifySessionLost(e)
@@ -471,8 +523,12 @@ class GameViewModel(
 
     private suspend fun reportSpotifySessionLost(cause: SpotifyAuthException) {
         Log.e(LOG_TAG, "No usable Spotify session", cause)
-        _event.emit(R.string.error_spotifySession)
+        _event.emit(Text.Resource(R.string.error_spotifySession))
     }
+
+    /** Spotify errors carry the useful part in the message, which is worth showing verbatim. */
+    private fun Throwable.readableMessage(): String =
+        message?.takeIf { it.isNotBlank() } ?: this::class.java.simpleName
 
     private fun setCurrentSong(song: Song) {
         _uiState.update { it.copy(currentSong = song).updatePrimaryButtonVisibility() }

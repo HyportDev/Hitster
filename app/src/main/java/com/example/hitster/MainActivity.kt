@@ -112,7 +112,10 @@ class MainActivity : ComponentActivity() {
                             parametersOf(args.playerNames, args.playlists)
                         }
                         LaunchedEffect(backStackEntry) {
+                            // The activity, not the application context: Spotify has to be able to
+                            // put its consent dialog on screen.
                             viewModel.initSpotifyConnection(
+                                this@MainActivity,
                                 spotifyConfig.clientId,
                                 spotifyConfig.redirectUri
                             )

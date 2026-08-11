@@ -37,13 +37,15 @@ class FetchPlaylistTracksUseCase(
 
                         items?.forEach { item ->
                             val track = item.asJsonObject.getAsJsonObject("track")
-                            val uri = track?.get("uri")?.asString
+                            val uri = track?.get("uri")?.takeUnless { it.isJsonNull }?.asString
                             if (uri != null) {
                                 trackURIs.add(uri)
                             }
                         }
 
-                        url = json.get("next")?.asString ?: ""
+                        // On the last page Spotify sends "next": null. That is a JsonNull element,
+                        // not an absent one, so the elvis never sees null and asString throws.
+                        url = json.get("next")?.takeUnless { it.isJsonNull }?.asString ?: ""
                     } else {
                         Log.e("FetchPlaylistTracksUseCase", "Error fetching playlist: ${response.code}")
                         Log.e("FetchPlaylistTracksUseCase", "Response body: $responseBody")

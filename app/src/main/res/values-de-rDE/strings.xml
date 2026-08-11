@@ -21,6 +21,9 @@
     <string name="home_spotifyDisconnected">Verbindung getrennt</string>
     <string name="home_invalidLink">Ungültiger Playlist-Link. Versuche es erneut.</string>
     <string name="error_spotifySession">Keine Spotify-Verbindung. Starte die App neu, um dich erneut anzumelden.</string>
+    <string name="error_spotifyConnection">Spotify-App nicht erreichbar: %1$s</string>
+    <string name="error_spotifyPlayback">Spotify spielt das nicht ab: %1$s</string>
+    <string name="error_spotifyNoTracks">Die Playlists haben keine Songs geliefert. Prüfe die Playlists und deine Spotify-Berechtigung.</string>
     <string name="game_add_token">Titel und Interpreten geraten</string>
     <string name="game_buttonReveal">Song auflösen</string>
     <string name="game_tokenHint">Zieh einen Token in eine freie Lücke, um gegen den aktiven Spieler zu wetten</string>

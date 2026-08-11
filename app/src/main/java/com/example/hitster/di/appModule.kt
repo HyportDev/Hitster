@@ -24,7 +24,8 @@ val appModule = module {
     viewModelOf(::GameViewModel)
 
     // Use cases
-    factory { ConnectToSpotifyUseCase(context = get()) }
+    // Takes the activity at call time, an application context cannot show Spotify's consent view.
+    factory { ConnectToSpotifyUseCase() }
     factoryOf(::FindEarliestReleaseYearUseCase)
     factoryOf(::FetchPlaylistTracksUseCase)
     factoryOf(::FetchTrackDetailsUseCase)

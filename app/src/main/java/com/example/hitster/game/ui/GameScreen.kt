@@ -62,6 +62,7 @@ import com.example.hitster.game.model.SongItem
 import com.example.hitster.game.model.TokenBet
 import com.example.hitster.game.model.UnknownSong
 import com.example.hitster.game.ui.SongCardValidation.Companion.toSongCardValidation
+import com.example.hitster.res.Text
 import com.example.hitster.res.toText
 import com.example.hitster.ui.Button
 import com.example.hitster.ui.ErrorSnackbar
@@ -73,7 +74,7 @@ import kotlin.math.roundToInt
 @Composable
 internal fun GameScreen(
     state: GameUiState,
-    event: SharedFlow<Int>,
+    event: SharedFlow<Text>,
     onAction: (GameAction) -> Unit
 ) {
     val configuration = LocalConfiguration.current
@@ -84,7 +85,7 @@ internal fun GameScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(event) {
-        event.collect { snackbarHostState.showSnackbar(message = context.getString(it)) }
+        event.collect { snackbarHostState.showSnackbar(it.getString(context.resources)) }
     }
 
     Box(

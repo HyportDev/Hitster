@@ -23,6 +23,9 @@
     <string name="game_pause" translatable="false">Pause Music</string>
     <string name="home_invalidLink">Invalid playlist link. Try again.</string>
     <string name="error_spotifySession">No Spotify connection. Restart the app to log in again.</string>
+    <string name="error_spotifyConnection">Cannot reach the Spotify app: %1$s</string>
+    <string name="error_spotifyPlayback">Spotify will not play this: %1$s</string>
+    <string name="error_spotifyNoTracks">The playlists returned no tracks. Check the playlists and your Spotify access.</string>
     <string name="game_add_token">Title and Artist guessed</string>
     <string name="game_buttonReveal">Reveal song</string>
     <string name="game_tokenHint">Drag a token into a free gap to bet against the current player</string>
